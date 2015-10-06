@@ -8420,7 +8420,6 @@ select_paren_derived:
             Lex->current_select->set_braces(true);
           }
           SELECT_SYM select_part2_derived
-          table_expression
           {
             if (setup_select_in_parentheses(Lex))
               MYSQL_YYABORT;
@@ -10844,7 +10843,6 @@ table_factor:
               MYSQL_YYABORT;
           }
           select_part2_derived
-          table_expression
           {
             LEX *lex= Lex;
             SELECT_LEX *sel= lex->current_select;
@@ -10988,6 +10986,7 @@ select_part2_derived:
           {
             Select->parsing_place= NO_MATTER;
           }
+          table_expression
         ;
 
 /* handle contents of parentheses in join expression */
@@ -15852,9 +15851,6 @@ query_specification:
           select_part2_derived
           {
             MYSQL_YYABORT_UNLESS(!Lex->current_select->set_braces(0));
-          }
-          table_expression
-          {
             $$= Lex->current_select->master_unit()->first_select();
           }
         | '(' select_paren_derived ')'
