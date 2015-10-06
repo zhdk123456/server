@@ -990,10 +990,10 @@ bool my_yyoverflow(short **a, YYSTYPE **b, ulong *yystacksize);
 %parse-param { THD *thd }
 %lex-param { THD *thd }
 /*
-  Currently there are 156 shift/reduce conflicts.
+  Currently there are 154 shift/reduce conflicts.
   We should not introduce new conflicts any more.
 */
-%expect 156
+%expect 154
 
 /*
    Comments for TOKENS.
@@ -8414,19 +8414,6 @@ select_paren:
         | '(' select_paren ')'
         ;
 
-/* The equivalent of select_paren for nested queries. */
-select_paren_derived:
-          {
-            Lex->current_select->set_braces(true);
-          }
-          SELECT_SYM select_part2_derived
-          {
-            if (setup_select_in_parentheses(Lex))
-              MYSQL_YYABORT;
-          }
-        | '(' select_paren_derived ')'
-        ;
-
 select_part2_union_ready:
           select_options_and_item_list
           opt_select_lock_type
@@ -8505,16 +8492,6 @@ select_options_and_item_list:
           {
             Select->parsing_place= NO_MATTER;
           }
-        ;
-
-table_expression:
-          opt_from_clause
-          opt_where_clause
-          opt_group_clause
-          opt_having_clause
-          opt_order_clause
-          opt_limit_clause
-          opt_select_lock_type
         ;
 
 from_clause:
@@ -10832,7 +10809,8 @@ table_factor:
               MYSQL_YYABORT;
             Select->add_joined_table($$);
           }
-        | select_derived_init get_select_lex
+        | SELECT_SYM
+          select_derived_init get_select_lex
           {
             LEX *lex= Lex;
             lex->derived_tables|= DERIVED_SUBQUERY;
@@ -10846,11 +10824,11 @@ table_factor:
           {
             LEX *lex= Lex;
             SELECT_LEX *sel= lex->current_select;
-            if ($1)
+            if ($2)
             {
               MYSQL_YYABORT_UNLESS(!sel->set_braces(1));
             }
-            if ($2->init_nested_join(lex->thd))
+            if ($3->init_nested_join(lex->thd))
               MYSQL_YYABORT;
             $$= 0;
             /* incomplete derived tables return NULL, we must be
@@ -10975,18 +10953,14 @@ select_derived_union:
 
 /* The equivalent of select_part2 for nested queries. */
 select_part2_derived:
-          {
-            LEX *lex= Lex;
-            SELECT_LEX *sel= lex->current_select;
-            if (sel->linkage != UNION_TYPE)
-              mysql_init_select(lex);
-            sel->parsing_place= SELECT_LIST;
-          }
-          opt_query_expression_options select_item_list
-          {
-            Select->parsing_place= NO_MATTER;
-          }
-          table_expression
+          select_options_and_item_list
+          opt_from_clause
+          opt_where_clause
+          opt_group_clause
+          opt_having_clause
+          opt_order_clause
+          opt_limit_clause
+          opt_select_lock_type
         ;
 
 /* handle contents of parentheses in join expression */
@@ -11013,7 +10987,6 @@ get_select_lex:
         ;
 
 select_derived_init:
-          SELECT_SYM
           {
             LEX *lex= Lex;
 
@@ -15848,12 +15821,12 @@ union_option:
 
 query_specification:
           SELECT_SYM
-          select_part2_derived
+          select_part2
           {
             MYSQL_YYABORT_UNLESS(!Lex->current_select->set_braces(0));
             $$= Lex->current_select->master_unit()->first_select();
           }
-        | '(' select_paren_derived ')'
+        | '(' select_paren ')'
           opt_order_or_limit
           {
             $$= Lex->current_select->master_unit()->first_select();
@@ -15904,16 +15877,6 @@ subselect_end:
             child->select_n_having_items;
             $$= child;
           }
-        ;
-
-opt_query_expression_options:
-          /* empty */
-        | query_expression_option_list
-        ;
-
-query_expression_option_list:
-          query_expression_option_list query_expression_option
-        | query_expression_option
         ;
 
 query_expression_option:
