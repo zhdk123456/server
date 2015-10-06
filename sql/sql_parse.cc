@@ -6959,16 +6959,6 @@ mysql_new_select(LEX *lex, bool move_down)
   }
   else
   {
-    if (lex->current_select->order_list.first && !lex->current_select->braces)
-    {
-      my_error(ER_WRONG_USAGE, MYF(0), "UNION", "ORDER BY");
-      DBUG_RETURN(1);
-    }
-    if (lex->current_select->explicit_limit && !lex->current_select->braces)
-    {
-      my_error(ER_WRONG_USAGE, MYF(0), "UNION", "LIMIT");
-      DBUG_RETURN(1);
-    }
     select_lex->include_neighbour(lex->current_select);
     SELECT_LEX_UNIT *unit= select_lex->master_unit();                              
     if (!unit->fake_select_lex && unit->add_fake_select_lex(lex->thd))

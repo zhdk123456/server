@@ -661,29 +661,8 @@ Item* handle_sql2003_note184_exception(THD *thd, Item* left, bool equal,
    @return <code>false</code> if successful, <code>true</code> if an error was
    reported. In the latter case parsing should stop.
  */
-bool add_select_to_union_list(LEX *lex, bool is_union_distinct, 
-                              bool is_top_level)
+bool add_select_to_union_list(LEX *lex, bool is_union_distinct)
 {
-  /* 
-     Only the last SELECT can have INTO. Since the grammar won't allow INTO in
-     a nested SELECT, we make this check only when creating a top-level SELECT.
-  */
-  if (is_top_level && lex->result)
-  {
-    my_error(ER_WRONG_USAGE, MYF(0), "UNION", "INTO");
-    return TRUE;
-  }
-  if (lex->current_select->order_list.first && !lex->current_select->braces)
-  {
-    my_error(ER_WRONG_USAGE, MYF(0), "UNION", "ORDER BY");
-    return TRUE;
-  }
-
-  if (lex->current_select->explicit_limit && !lex->current_select->braces)
-  {
-    my_error(ER_WRONG_USAGE, MYF(0), "UNION", "LIMIT");
-    return TRUE;
-  }
   if (lex->current_select->linkage == GLOBAL_OPTIONS_TYPE)
   {
     my_parse_error(lex->thd, ER_SYNTAX_ERROR);
@@ -1861,9 +1840,8 @@ bool my_yyoverflow(short **a, YYSTYPE **b, ulong *yystacksize);
 
 %type <variable> internal_variable_name
 
-%type <select_lex> subselect
+%type <select_lex> subselect subselect_end
         get_select_lex query_specification 
-        query_expression_body
 
 %type <boolfunc2creator> comp_op
 
@@ -1914,7 +1892,7 @@ bool my_yyoverflow(short **a, YYSTYPE **b, ulong *yystacksize);
         single_multi table_wild_list table_wild_one opt_wild
         opt_union_list union_list
         precision subselect_start opt_and charset
-        subselect_end select_var_list select_var_list_init help 
+        select_var_list select_var_list_init help
         field_length opt_field_length
         opt_extended_describe shutdown
         opt_format_json
@@ -8429,10 +8407,10 @@ select_init_toplevel_only:
 
 select_init:
           SELECT_SYM select_part2_union_ready
-          { Lex->current_select->set_braces(false); }
+          { MYSQL_YYABORT_UNLESS(!Lex->current_select->set_braces(0)); }
           union_list
         | SELECT_SYM select_part2
-          { Lex->current_select->set_braces(false); }
+          { MYSQL_YYABORT_UNLESS(!Lex->current_select->set_braces(0)); }
         | '(' select_paren ')' union_or_opt_order_or_limit
         ;
 
@@ -11013,7 +10991,7 @@ select_derived_union:
           UNION_SYM
           union_option
           {
-            if (add_select_to_union_list(Lex, (bool)$3, FALSE))
+            if (add_select_to_union_list(Lex, (bool)$3))
               MYSQL_YYABORT;
           }
           query_specification
@@ -15913,7 +15891,7 @@ opt_union_list:
 union_list:
           UNION_SYM union_option
           {
-            if (add_select_to_union_list(Lex, (bool)$2, TRUE))
+            if (add_select_to_union_list(Lex, (bool)$2))
               MYSQL_YYABORT;
           }
           select_init
@@ -15969,11 +15947,7 @@ query_specification:
           SELECT_SYM
           select_part2_derived
           {
-            if (Lex->current_select->set_braces(0))
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS(!Lex->current_select->set_braces(0));
           }
           table_expression
           {
@@ -15986,28 +15960,8 @@ query_specification:
           }
         ;
 
-query_expression_body:
-          query_specification
-        | query_expression_body
-          UNION_SYM union_option 
-          {
-            if (add_select_to_union_list(Lex, (bool)$3, FALSE))
-              MYSQL_YYABORT;
-          }
-          query_specification
-          {
-            Lex->pop_context();
-            $$= $1;
-          }
-        ;
-
 /* Corresponds to <query expression> in the SQL:2003 standard. */
-subselect:
-          subselect_start query_expression_body subselect_end
-          { 
-            $$= $2;
-          }
-        ;
+subselect: subselect_start select_init subselect_end { $$= $3; } ;
 
 subselect_start:
           {
@@ -16052,6 +16006,7 @@ subselect_end:
             */
             lex->current_select->select_n_having_items+=
             child->select_n_having_items;
+            $$= child;
           }
         ;
 
