@@ -10791,6 +10791,18 @@ use_partition:
 
    I.e.
    <table factor> ::= <table primary> [ <sample clause> ]
+
+  It understands both a table name and a SELECT without parentheses.
+  It's because one can have
+
+     ( ( ( t1 JOIN t2 ) JOIN t3 ) join t4 )
+
+  and
+
+     ( ( ( SELECT 1 UNION SELECT 2) UNION SELECT 3 ) UNION SELECT 4)
+
+  and the parser will have to shift three '(' before it'll know whether
+  the first '(' was for a table or a subquery.
 */   
 /* Warning - may return NULL in case of incomplete SELECT */
 table_factor:
@@ -10809,8 +10821,7 @@ table_factor:
               MYSQL_YYABORT;
             Select->add_joined_table($$);
           }
-        | SELECT_SYM
-          select_derived_init get_select_lex
+        | SELECT_SYM select_derived_init get_select_lex
           {
             LEX *lex= Lex;
             lex->derived_tables|= DERIVED_SUBQUERY;
@@ -10886,10 +10897,6 @@ table_factor:
               lex->pop_context();
               lex->nest_level--;
             }
-            /*else if (($3->select_lex &&
-                      $3->select_lex->master_unit()->is_union() &&
-                      ($3->select_lex->master_unit()->first_select() ==
-                       $3->select_lex || !$3->lifted)) || $5)*/
             else if ($5 != NULL)
             {
               /*
@@ -10967,17 +10974,15 @@ select_part2_derived:
 select_derived:
           get_select_lex
           {
-            LEX *lex= Lex;
-            if ($1->init_nested_join(lex->thd))
+            if ($1->init_nested_join(Lex->thd))
               MYSQL_YYABORT;
           }
           derived_table_list
           {
-            LEX *lex= Lex;
             /* for normal joins, $3 != NULL and end_nested_join() != NULL,
                for derived tables, both must equal NULL */
 
-            $$= $1->end_nested_join(lex->thd);
+            $$= $1->end_nested_join(Lex->thd);
             MYSQL_YYABORT_UNLESS(!$3 == !$$);
           }
         ;
