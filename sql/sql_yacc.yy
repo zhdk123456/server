@@ -3403,16 +3403,12 @@ signal_allowed_expr:
             if ($1->type() == Item::FUNC_ITEM)
             {
               Item_func *item= (Item_func*) $1;
-              if (item->functype() == Item_func::SUSERVAR_FUNC)
-              {
-                /*
-                  Don't allow the following syntax:
-                    SIGNAL/RESIGNAL ...
-                    SET <signal condition item name> = @foo := expr
-                */
-                my_parse_error(thd, ER_SYNTAX_ERROR);
-                MYSQL_YYABORT;
-              }
+              /*
+                Don't allow the following syntax:
+                  SIGNAL/RESIGNAL ...
+                  SET <signal condition item name> = @foo := expr
+              */
+              MYSQL_YYABORT_UNLESS(item->functype() != Item_func::SUSERVAR_FUNC);
             }
             $$= $1;
           }
@@ -5757,7 +5753,9 @@ create_table_option:
             we can store the higher bits from stats_sample_pages in .frm too. */
             if ($3 == 0 || $3 > 0xffff)
             {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
+              char buf[64];
+              my_error(ER_BAD_OPTION_VALUE, MYF(0),
+                       ullstr($3, buf), "STATS_SAMPLE_PAGES");
               MYSQL_YYABORT;
             }
             Lex->create_info.stats_sample_pages=$3;
@@ -6192,11 +6190,7 @@ parse_vcol_expr:
               when reading a '*.frm' file.
               Prevent the end user from invoking this command.
             */
-            if (!Lex->parse_vcol_expr)
-            {
-              my_message(ER_SYNTAX_ERROR, ER_THD(thd, ER_SYNTAX_ERROR), MYF(0));
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS(Lex->parse_vcol_expr);
           }
         ;
 
@@ -6738,13 +6732,7 @@ opt_bin_mod:
 
 ws_nweights:
         '(' real_ulong_num
-        {
-          if ($2 == 0)
-          {
-            my_parse_error(thd, ER_SYNTAX_ERROR);
-            MYSQL_YYABORT;
-          }
-        }
+        { MYSQL_YYABORT_UNLESS($2); }
         ')'
         { $$= $2; }
         ;
@@ -7250,11 +7238,7 @@ alter:
           opt_ev_comment
           opt_ev_sql_stmt
           {
-            if (!($7 || $8 || $9 || $10 || $11))
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS($7 || $8 || $9 || $10 || $11);
             /*
               sql_command is set here because some rules in ev_sql_stmt
               can overwrite it
@@ -10129,11 +10113,7 @@ function_call_generic:
                 (udf= find_udf($1.str, $1.length)) &&
                 udf->type == UDFTYPE_AGGREGATE)
             {
-              if (lex->current_select->inc_in_sum_expr())
-              {
-                my_parse_error(thd, ER_SYNTAX_ERROR);
-                MYSQL_YYABORT;
-              }
+              MYSQL_YYABORT_UNLESS(!lex->current_select->inc_in_sum_expr());
             }
             /* Temporary placing the result of find_udf in $3 */
             $<udf>$= udf;
@@ -10472,11 +10452,7 @@ variable_aux:
         | '@' opt_var_ident_type ident_or_text opt_component
           {
             /* disallow "SELECT @@global.global.variable" */
-            if ($3.str && $4.str && check_reserved_words(&$3))
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS(!$3.str || !$4.str || !check_reserved_words(&$3));
             if (!($$= get_system_var(thd, $2, $3, $4)))
               MYSQL_YYABORT;
             if (!((Item_func_get_system_var*) $$)->is_written_to_binlog())
@@ -10527,12 +10503,7 @@ gorder_list:
 in_sum_expr:
           opt_all
           {
-            LEX *lex= Lex;
-            if (lex->current_select->inc_in_sum_expr())
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS(!Lex->current_select->inc_in_sum_expr());
           }
           expr
           {
@@ -10654,12 +10625,7 @@ table_ref:
           table_factor { $$=$1; }
         | join_table
           {
-            LEX *lex= Lex;
-            if (!($$= lex->current_select->nest_last_join(lex->thd)))
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS($$= Lex->current_select->nest_last_join(Lex->thd));
           }
         ;
 
@@ -10873,11 +10839,7 @@ table_factor:
             SELECT_LEX *sel= lex->current_select;
             if ($1)
             {
-              if (sel->set_braces(1))
-              {
-                my_parse_error(thd, ER_SYNTAX_ERROR);
-                MYSQL_YYABORT;
-              }
+              MYSQL_YYABORT_UNLESS(!sel->set_braces(1));
             }
             if ($2->init_nested_join(lex->thd))
               MYSQL_YYABORT;
@@ -10981,11 +10943,7 @@ table_factor:
 select_derived_union:
           select_derived opt_order_or_limit
           {
-            if ($1 && $2)
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS(!$1 || !$2);
           }
         | select_derived_union
           UNION_SYM
@@ -11002,11 +10960,7 @@ select_derived_union:
              */
             Lex->pop_context();
 
-            if ($1 != NULL)
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS($1 == NULL);
           }
         ;
 
@@ -11039,13 +10993,8 @@ select_derived:
             /* for normal joins, $3 != NULL and end_nested_join() != NULL,
                for derived tables, both must equal NULL */
 
-            if (!($$= $1->end_nested_join(lex->thd)) && $3)
-              MYSQL_YYABORT;
-            if (!$3 && $$)
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            $$= $1->end_nested_join(lex->thd);
+            MYSQL_YYABORT_UNLESS(!$3 == !$$);
           }
         ;
 
@@ -11053,12 +11002,8 @@ select_derived2:
           {
             LEX *lex= Lex;
             lex->derived_tables|= DERIVED_SUBQUERY;
-            if (!lex->expr_allows_subselect ||
-                lex->sql_command == (int)SQLCOM_PURGE)
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS(lex->expr_allows_subselect &&
+                                 lex->sql_command != (int)SQLCOM_PURGE);
             if (lex->current_select->linkage == GLOBAL_OPTIONS_TYPE ||
                 mysql_new_select(lex, 1))
               MYSQL_YYABORT;
@@ -11089,14 +11034,8 @@ select_derived_init:
             }
 
             SELECT_LEX *sel= lex->current_select;
-            TABLE_LIST *embedding;
-            if (!sel->embedding || sel->end_nested_join(lex->thd))
-            {
-              /* we are not in parentheses */
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
-            embedding= Select->embedding;
+            TABLE_LIST *embedding= sel->embedding;
+            MYSQL_YYABORT_UNLESS(embedding && !sel->end_nested_join(lex->thd));
             $$= embedding &&
                 !embedding->nested_join->join_list.elements;
             /* return true if we are deeply nested */
@@ -14733,21 +14672,15 @@ option_value_following_option_type:
           {
             LEX *lex= Lex;
 
-            if ($1.var && $1.var != trg_new_row_fake_var)
-            {
-              /* It is a system variable. */
-              if (set_system_variable(thd, &$1, lex->option_type, $3))
-                MYSQL_YYABORT;
-            }
-            else
-            {
-              /*
-                Not in trigger assigning value to new row,
-                and option_type preceding local variable is illegal.
-              */
-              my_parse_error(thd, ER_SYNTAX_ERROR);
+            /*
+              Not in trigger assigning value to new row,
+              and option_type preceding local variable is illegal.
+            */
+            MYSQL_YYABORT_UNLESS($1.var && $1.var != trg_new_row_fake_var);
+
+            /* Or a system variable. */
+            if (set_system_variable(thd, &$1, lex->option_type, $3))
               MYSQL_YYABORT;
-            }
           }
         ;
 
@@ -14932,11 +14865,7 @@ internal_variable_name:
         | ident '.' ident
           {
             LEX *lex= Lex;
-            if (check_reserved_words(&$1))
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS(!check_reserved_words(&$1));
             if (lex->sphead && lex->sphead->m_type == TYPE_ENUM_TRIGGER &&
                 (!my_strcasecmp(system_charset_info, $1.str, "NEW") || 
                  !my_strcasecmp(system_charset_info, $1.str, "OLD")))
@@ -15281,22 +15210,14 @@ revoke_command:
         | grant_privileges ON FUNCTION_SYM grant_ident FROM user_and_role_list
           {
             LEX *lex= Lex;
-            if (lex->columns.elements)
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS(lex->columns.elements == 0);
             lex->sql_command= SQLCOM_REVOKE;
             lex->type= TYPE_ENUM_FUNCTION;
           }
         | grant_privileges ON PROCEDURE_SYM grant_ident FROM user_and_role_list
           {
             LEX *lex= Lex;
-            if (lex->columns.elements)
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS(lex->columns.elements == 0);
             lex->sql_command= SQLCOM_REVOKE;
             lex->type= TYPE_ENUM_PROCEDURE;
           }
@@ -15343,11 +15264,7 @@ grant_command:
           require_clause grant_options
           {
             LEX *lex= Lex;
-            if (lex->columns.elements)
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS(lex->columns.elements == 0);
             lex->sql_command= SQLCOM_GRANT;
             lex->type= TYPE_ENUM_FUNCTION;
           }
@@ -15355,11 +15272,7 @@ grant_command:
           require_clause grant_options
           {
             LEX *lex= Lex;
-            if (lex->columns.elements)
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS(lex->columns.elements == 0);
             lex->sql_command= SQLCOM_GRANT;
             lex->type= TYPE_ENUM_PROCEDURE;
           }
@@ -15966,12 +15879,8 @@ subselect: subselect_start select_init subselect_end { $$= $3; } ;
 subselect_start:
           {
             LEX *lex=Lex;
-            if (!lex->expr_allows_subselect ||
-               lex->sql_command == (int)SQLCOM_PURGE)
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
+            MYSQL_YYABORT_UNLESS(lex->expr_allows_subselect &&
+                                 lex->sql_command != (int)SQLCOM_PURGE);
             /* 
               we are making a "derived table" for the parenthesis
               as we need to have a lex level to fit the union 
