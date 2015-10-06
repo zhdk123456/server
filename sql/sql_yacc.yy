@@ -711,13 +711,6 @@ bool add_select_to_union_list(LEX *lex, bool is_union_distinct,
 bool setup_select_in_parentheses(LEX *lex) 
 {
   SELECT_LEX * sel= lex->current_select;
-  /*
-  if (sel->set_braces(1))
-  {
-    my_parse_error(lex->thd, ER_SYNTAX_ERROR);
-    return TRUE;
-  }
-  */
   DBUG_ASSERT(sel->braces);
   if (sel->linkage == UNION_TYPE &&
       !sel->master_unit()->first_select()->braces &&
@@ -1018,10 +1011,10 @@ bool my_yyoverflow(short **a, YYSTYPE **b, ulong *yystacksize);
 %parse-param { THD *thd }
 %lex-param { THD *thd }
 /*
-  Currently there are 160 shift/reduce conflicts.
+  Currently there are 159 shift/reduce conflicts.
   We should not introduce new conflicts any more.
 */
-%expect 160
+%expect 159
 
 /*
    Comments for TOKENS.
@@ -1738,8 +1731,8 @@ bool my_yyoverflow(short **a, YYSTYPE **b, ulong *yystacksize);
         udf_type opt_local opt_no_write_to_binlog
         opt_temporary all_or_any opt_distinct
         opt_ignore_leaves fulltext_options union_option
-        opt_not opt_union_order_or_limit
-        union_opt select_derived_init transaction_access_mode_types
+        opt_not opt_order_or_limit union_or_opt_order_or_limit
+        select_derived_init transaction_access_mode_types
         opt_natural_language_mode opt_query_expansion
         opt_ev_status opt_ev_on_completion ev_on_completion opt_ev_comment
         ev_alter_on_schedule_completion opt_ev_rename_to opt_ev_sql_stmt
@@ -1748,7 +1741,7 @@ bool my_yyoverflow(short **a, YYSTYPE **b, ulong *yystacksize);
         opt_default_time_precision
         case_stmt_body opt_bin_mod
         opt_if_exists_table_element opt_if_not_exists_table_element
-        opt_into opt_procedure_clause
+        opt_procedure_clause
 
 %type <object_ddl_options>
         create_or_replace 
@@ -1919,7 +1912,7 @@ bool my_yyoverflow(short **a, YYSTYPE **b, ulong *yystacksize);
         table_to_table_list table_to_table opt_table_list opt_as
         handler_rkey_function handler_read_or_scan
         single_multi table_wild_list table_wild_one opt_wild
-        union_clause union_list
+        opt_union_list union_list
         precision subselect_start opt_and charset
         subselect_end select_var_list select_var_list_init help 
         field_length opt_field_length
@@ -4834,7 +4827,8 @@ create_body:
           conflict that prevents the rule above from parsing a syntax like
           CREATE TABLE t1 (SELECT 1);
         */
-        | '(' create_select ')' { Select->set_braces(1);} union_opt {}
+        | '(' create_select ')' { Select->set_braces(1);}
+          union_or_opt_order_or_limit {}
         | create_like
           {
 
@@ -4857,10 +4851,10 @@ opt_create_select:
           /* empty */ {}
         | opt_duplicate opt_as create_select
           { Select->set_braces(0);}
-          union_clause {}
+          opt_union_list {}
         | opt_duplicate opt_as '(' create_select ')'
           { Select->set_braces(1);}
-          union_opt {}
+          union_or_opt_order_or_limit {}
         ;
 
 opt_create_partitioning:
@@ -5589,7 +5583,14 @@ create_select:
           {
             Select->parsing_place= NO_MATTER;
           }
-          table_expression
+          opt_from_clause
+          opt_where_clause
+          opt_group_clause
+          opt_having_clause
+          opt_order_clause
+          opt_limit_clause
+          opt_procedure_clause
+          opt_select_lock_type
           {
             /*
               The following work only with the local list, the global list
@@ -8414,17 +8415,25 @@ opt_ignore_leaves:
 
 
 select:
-          select_init
+          select_init_toplevel_only
           {
             LEX *lex= Lex;
             lex->sql_command= SQLCOM_SELECT;
           }
         ;
 
-/* Need select_init2 for subselects. */
+select_init_toplevel_only:
+          SELECT_SYM select_part2_toplevel_only
+        | select_init
+        ;
+
 select_init:
-          SELECT_SYM select_init2
-        | '(' select_paren ')' union_opt
+          SELECT_SYM select_part2_union_ready
+          { Lex->current_select->set_braces(false); }
+          union_list
+        | SELECT_SYM select_part2
+          { Lex->current_select->set_braces(false); }
+        | '(' select_paren ')' union_or_opt_order_or_limit
         ;
 
 select_paren:
@@ -8457,52 +8466,70 @@ select_paren_derived:
         | '(' select_paren_derived ')'
         ;
 
-select_init2:
-          select_part2
-          {
-            LEX *lex= Lex;
-            /* Parentheses carry no meaning here */
-            lex->current_select->set_braces(false);
-          }
-          union_clause
+select_part2_union_ready:
+          select_options_and_item_list
+          opt_select_lock_type
+        | select_options_and_item_list
+          from_clause
+          opt_where_clause
+          opt_group_clause
+          opt_having_clause
+          opt_select_lock_type
         ;
 
-/*
-  Theoretically we can merge all 3 right hand sides of the select_part2
-  rule into one, however such a transformation adds one shift/reduce
-  conflict more.
-*/
 select_part2:
-          select_options_and_item_list
-          opt_order_clause
-          opt_limit_clause
-          opt_select_lock_type
-        | select_options_and_item_list into opt_select_lock_type
+          select_part2_union_ready
         | select_options_and_item_list
-          opt_into
+          order_or_limit
+          opt_select_lock_type
+        | select_options_and_item_list
+          from_clause
+          opt_where_clause
+          opt_group_clause
+          opt_having_clause
+          order_clause
+          opt_select_lock_type
+        | select_options_and_item_list
+          from_clause
+          opt_where_clause
+          opt_group_clause
+          opt_having_clause
+          opt_order_clause
+          limit_clause
+          opt_select_lock_type
+        ;
+
+select_part2_toplevel_only:
+          select_options_and_item_list
+          into
+          opt_select_lock_type
+        | select_options_and_item_list
+          into
           from_clause
           opt_where_clause
           opt_group_clause
           opt_having_clause
           opt_order_clause
           opt_limit_clause
-          opt_procedure_clause
-          opt_into
           opt_select_lock_type
-          {
-            if ($2 && $10)
-            {
-              /* double "INTO" clause */
-              my_error(ER_WRONG_USAGE, MYF(0), "INTO", "INTO");
-              MYSQL_YYABORT;
-            }
-            if ($9 && ($2 || $10))
-            {
-              /* "INTO" with "PROCEDURE ANALYSE" */
-              my_error(ER_WRONG_USAGE, MYF(0), "PROCEDURE", "INTO");
-              MYSQL_YYABORT;
-            }
-          }
+        | select_options_and_item_list
+          from_clause
+          opt_where_clause
+          opt_group_clause
+          opt_having_clause
+          opt_order_clause
+          opt_limit_clause
+          into
+          opt_select_lock_type
+        | select_options_and_item_list
+          from_clause
+          opt_where_clause
+          opt_group_clause
+          opt_having_clause
+          opt_order_clause
+          opt_limit_clause
+          procedure_clause
+          opt_select_lock_type
         ;
 
 select_options_and_item_list:
@@ -8526,7 +8553,6 @@ table_expression:
           opt_having_clause
           opt_order_clause
           opt_limit_clause
-          opt_procedure_clause
           opt_select_lock_type
         ;
 
@@ -10975,7 +11001,7 @@ table_factor:
   subqueries have their own union rules.
 */
 select_derived_union:
-          select_derived opt_union_order_or_limit
+          select_derived opt_order_or_limit
           {
             if ($1 && $2)
             {
@@ -10999,20 +11025,6 @@ select_derived_union:
             Lex->pop_context();
 
             if ($1 != NULL)
-            {
-              my_parse_error(thd, ER_SYNTAX_ERROR);
-              MYSQL_YYABORT;
-            }
-          }
-        ;
-
-/* The equivalent of select_init2 for nested queries. */
-select_init2_derived:
-          select_part2_derived
-          {
-            LEX *lex= Lex;
-            SELECT_LEX * sel= lex->current_select;
-            if (lex->current_select->set_braces(0))
             {
               my_parse_error(thd, ER_SYNTAX_ERROR);
               MYSQL_YYABORT;
@@ -11656,8 +11668,11 @@ choice:
 	;
 
 opt_procedure_clause:
-          /* empty */ { $$= false; }
-        | PROCEDURE_SYM ident /* Procedure name */
+          /* empty */           { $$= false; }
+        | procedure_clause      { $$= true; }
+
+procedure_clause:
+          PROCEDURE_SYM ident /* Procedure name */
           {
             LEX *lex=Lex;
 
@@ -11685,9 +11700,6 @@ opt_procedure_clause:
             Lex->uncacheable(UNCACHEABLE_SIDEEFFECT);
           }
           '(' procedure_list ')'
-          {
-            $$= true;
-          }
         ;
 
 procedure_list:
@@ -11764,11 +11776,6 @@ select_outvar:
                                           Lex->sphead)) :
                                 NULL;
           }
-        ;
-
-opt_into:
-          /* empty */ { $$= false; }
-        | into        { $$= true; }
         ;
 
 into:
@@ -12151,10 +12158,10 @@ insert_values:
         | VALUE_SYM values_list {}
         | create_select
           { Select->set_braces(0);}
-          union_clause {}
+          opt_union_list {}
         | '(' create_select ')'
           { Select->set_braces(1);}
-          union_opt {}
+          union_or_opt_order_or_limit {}
         ;
 
 values_list:
@@ -15898,7 +15905,7 @@ release:
 */
 
 
-union_clause:
+opt_union_list:
           /* empty */ {}
         | union_list
         ;
@@ -15919,18 +15926,14 @@ union_list:
           }
         ;
 
-union_opt:
-          opt_union_order_or_limit
+union_or_opt_order_or_limit:
+          opt_order_or_limit
         | union_list { $$= 1; }
         ;
 
-opt_union_order_or_limit:
+opt_order_or_limit:
           /* Empty */ { $$= 0; }
-	| union_order_or_limit { $$= 1; }
-	;
-
-union_order_or_limit:
-          {
+	| {
             LEX *lex= thd->lex;
             DBUG_ASSERT(lex->current_select->linkage != GLOBAL_OPTIONS_TYPE);
             SELECT_LEX *sel= lex->current_select;
@@ -15947,6 +15950,7 @@ union_order_or_limit:
           {
             thd->lex->current_select->no_table_names_allowed= 0;
             thd->where= "";
+            $$= 1;
           }
         ;
 
@@ -15962,13 +15966,21 @@ union_option:
         ;
 
 query_specification:
-          SELECT_SYM select_init2_derived
+          SELECT_SYM
+          select_part2_derived
+          {
+            if (Lex->current_select->set_braces(0))
+            {
+              my_parse_error(thd, ER_SYNTAX_ERROR);
+              MYSQL_YYABORT;
+            }
+          }
           table_expression
           {
             $$= Lex->current_select->master_unit()->first_select();
           }
         | '(' select_paren_derived ')'
-          opt_union_order_or_limit
+          opt_order_or_limit
           {
             $$= Lex->current_select->master_unit()->first_select();
           }
@@ -16220,7 +16232,7 @@ view_select:
             lex->parsing_options.allows_derived= FALSE;
             lex->create_view_select.str= (char *) YYLIP->get_cpp_ptr();
           }
-          view_select_aux view_check_option
+          select_init view_check_option
           {
             LEX *lex= Lex;
             uint len= YYLIP->get_cpp_ptr() - lex->create_view_select.str;
@@ -16233,11 +16245,6 @@ view_select:
             lex->parsing_options.allows_select_procedure= TRUE;
             lex->parsing_options.allows_derived= TRUE;
           }
-        ;
-
-view_select_aux:
-          SELECT_SYM select_init2
-        | '(' select_paren ')' union_opt
         ;
 
 view_check_option:
