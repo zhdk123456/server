@@ -990,10 +990,10 @@ bool my_yyoverflow(short **a, YYSTYPE **b, ulong *yystacksize);
 %parse-param { THD *thd }
 %lex-param { THD *thd }
 /*
-  Currently there are 159 shift/reduce conflicts.
+  Currently there are 156 shift/reduce conflicts.
   We should not introduce new conflicts any more.
 */
-%expect 159
+%expect 156
 
 /*
    Comments for TOKENS.
@@ -10833,7 +10833,18 @@ table_factor:
               MYSQL_YYABORT;
             Select->add_joined_table($$);
           }
-        | select_derived_init get_select_lex select_derived2
+        | select_derived_init get_select_lex
+          {
+            LEX *lex= Lex;
+            lex->derived_tables|= DERIVED_SUBQUERY;
+            MYSQL_YYABORT_UNLESS(lex->expr_allows_subselect &&
+                                 lex->sql_command != (int)SQLCOM_PURGE);
+            if (lex->current_select->linkage == GLOBAL_OPTIONS_TYPE ||
+                mysql_new_select(lex, 1))
+              MYSQL_YYABORT;
+          }
+          select_part2_derived
+          table_expression
           {
             LEX *lex= Lex;
             SELECT_LEX *sel= lex->current_select;
@@ -10971,7 +10982,7 @@ select_part2_derived:
             SELECT_LEX *sel= lex->current_select;
             if (sel->linkage != UNION_TYPE)
               mysql_init_select(lex);
-            lex->current_select->parsing_place= SELECT_LIST;
+            sel->parsing_place= SELECT_LIST;
           }
           opt_query_expression_options select_item_list
           {
@@ -10996,26 +11007,6 @@ select_derived:
             $$= $1->end_nested_join(lex->thd);
             MYSQL_YYABORT_UNLESS(!$3 == !$$);
           }
-        ;
-
-select_derived2:
-          {
-            LEX *lex= Lex;
-            lex->derived_tables|= DERIVED_SUBQUERY;
-            MYSQL_YYABORT_UNLESS(lex->expr_allows_subselect &&
-                                 lex->sql_command != (int)SQLCOM_PURGE);
-            if (lex->current_select->linkage == GLOBAL_OPTIONS_TYPE ||
-                mysql_new_select(lex, 1))
-              MYSQL_YYABORT;
-            mysql_init_select(lex);
-            lex->current_select->linkage= DERIVED_TABLE_TYPE;
-            lex->current_select->parsing_place= SELECT_LIST;
-          }
-          select_options select_item_list
-          {
-            Select->parsing_place= NO_MATTER;
-          }
-          table_expression
         ;
 
 get_select_lex:
