@@ -990,10 +990,10 @@ bool my_yyoverflow(short **a, YYSTYPE **b, ulong *yystacksize);
 %parse-param { THD *thd }
 %lex-param { THD *thd }
 /*
-  Currently there are 154 shift/reduce conflicts.
+  Currently there are 152 shift/reduce conflicts.
   We should not introduce new conflicts any more.
 */
-%expect 154
+%expect 152
 
 /*
    Comments for TOKENS.
@@ -10831,7 +10831,11 @@ table_factor:
                 mysql_new_select(lex, 1))
               MYSQL_YYABORT;
           }
-          select_part2_derived
+          select_options_and_item_list
+          opt_from_clause
+          opt_where_clause
+          opt_group_clause
+          opt_having_clause
           {
             LEX *lex= Lex;
             SELECT_LEX *sel= lex->current_select;
@@ -10857,17 +10861,16 @@ table_factor:
             <table subquery> ::= <subquery>
             <subquery> ::= <left paren> <query expression> <right paren>
             <query expression> ::= [ <with clause> ] <query expression body>
-
-            For the time being we use the non-standard rule
-            select_derived_union which is a compromise between the standard
-            and our parser. Possibly this rule could be replaced by our
-            query_expression_body.
           */
-        | '(' get_select_lex select_derived_union ')' opt_table_alias
+        | '(' get_select_lex select_derived_union
+              opt_order_clause
+              opt_limit_clause
+              opt_select_lock_type
+           ')' opt_table_alias
           {
             /* Use $2 instead of Lex->current_select as derived table will
                alter value of Lex->current_select. */
-            if (!($3 || $5) && $2->embedding &&
+            if (!($3 || $8) && $2->embedding &&
                 !$2->embedding->nested_join->join_list.elements)
             {
               /* we have a derived table ($3 == NULL) but no alias,
@@ -10889,7 +10892,7 @@ table_factor:
               if (ti == NULL)
                 MYSQL_YYABORT;
               if (!($$= sel->add_table_to_list(lex->thd,
-                                               ti, $5, 0,
+                                               ti, $8, 0,
                                                TL_READ, MDL_SHARED_READ)))
 
                 MYSQL_YYABORT;
@@ -10897,7 +10900,7 @@ table_factor:
               lex->pop_context();
               lex->nest_level--;
             }
-            else if ($5 != NULL)
+            else if ($8 != NULL)
             {
               /*
                 Tables with or without joins within parentheses cannot
@@ -10935,10 +10938,7 @@ table_factor:
   subqueries have their own union rules.
 */
 select_derived_union:
-          select_derived opt_order_or_limit
-          {
-            MYSQL_YYABORT_UNLESS(!$1 || !$2);
-          }
+          select_derived
         | select_derived_union
           UNION_SYM
           union_option
@@ -10956,18 +10956,6 @@ select_derived_union:
 
             MYSQL_YYABORT_UNLESS($1 == NULL);
           }
-        ;
-
-/* The equivalent of select_part2 for nested queries. */
-select_part2_derived:
-          select_options_and_item_list
-          opt_from_clause
-          opt_where_clause
-          opt_group_clause
-          opt_having_clause
-          opt_order_clause
-          opt_limit_clause
-          opt_select_lock_type
         ;
 
 /* handle contents of parentheses in join expression */
@@ -15826,13 +15814,12 @@ union_option:
 
 query_specification:
           SELECT_SYM
-          select_part2
+          select_part2_union_ready
           {
             MYSQL_YYABORT_UNLESS(!Lex->current_select->set_braces(0));
             $$= Lex->current_select->master_unit()->first_select();
           }
         | '(' select_paren ')'
-          opt_order_or_limit
           {
             $$= Lex->current_select->master_unit()->first_select();
           }
