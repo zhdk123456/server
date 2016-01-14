@@ -116,10 +116,10 @@ static char *default_home= (char *)".";
 
 #define FLOGGER_SKIP_INCLUDES
 #define my_open(A, B, C) loc_open(A, B)
-#define my_close(A, B) close(A)
+#define my_close(A, B) loc_close(A)
 #define my_rename(A, B, C) loc_rename(A, B)
 #define my_tell(A, B) loc_tell(A)
-#define my_write(A, B, C, D) write(A, B, C)
+#define my_write(A, B, C, D) loc_write(A, B, C)
 #define my_malloc(A, B) malloc(A)
 #define my_free(A) free(A)
 #ifdef my_errno
@@ -137,6 +137,19 @@ static int loc_file_errno;
 #define logger_rotate loc_logger_rotate
 #define logger_init_mutexts loc_logger_init_mutexts
 
+
+static size_t loc_write(File Filedes, const uchar *Buffer, size_t Count)
+{
+  size_t writtenbytes;
+#ifdef _WIN32
+  writtenbytes= my_win_write(Filedes, Buffer, Count);
+#else
+  writtenbytes= write(Filedes, Buffer, Count);
+#endif
+  return writtenbytes;
+}
+
+
 static File loc_open(const char *FileName, int Flags)
 				/* Path-name of file */
 				/* Read | write .. */
@@ -153,6 +166,23 @@ static File loc_open(const char *FileName, int Flags)
   my_errno= errno;
   return fd;
 } 
+
+
+static int loc_close(File fd)
+{
+  int err;
+#ifndef _WIN32
+  do
+  {
+    err= close(fd);
+  } while (err == -1 && errno == EINTR);
+#else
+  err= my_win_close(fd);
+#endif
+  my_errno=errno;
+  return err;
+}
+
 
 static int loc_rename(const char *from, const char *to)
 {
