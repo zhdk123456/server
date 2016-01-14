@@ -1,5 +1,6 @@
 
 --source include/not_embedded.inc
+--source include/not_windows.inc
 
 if (!$SERVER_AUDIT_SO) {
   skip No SERVER_AUDIT plugin;
