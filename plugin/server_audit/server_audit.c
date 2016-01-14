@@ -122,12 +122,22 @@ static char *default_home= (char *)".";
 #define my_write(A, B, C, D) write(A, B, C)
 #define my_malloc(A, B) malloc(A)
 #define my_free(A) free(A)
+#ifdef my_errno
+  #undef my_errno
+#endif
+static int loc_file_errno;
+#define my_errno loc_file_errno
 #ifdef my_vsnprintf
   #undef my_vsnprintf
 #endif
 #define my_vsnprintf vsnprintf
+#define logger_open loc_logger_open
+#define logger_close loc_logger_close
+#define logger_write loc_logger_write
+#define logger_rotate loc_logger_rotate
+#define logger_init_mutexts loc_logger_init_mutexts
 
-File loc_open(const char *FileName, int Flags)
+static File loc_open(const char *FileName, int Flags)
 				/* Path-name of file */
 				/* Read | write .. */
 				/* Special flags */
@@ -140,6 +150,7 @@ File loc_open(const char *FileName, int Flags)
 #else
   fd = open((char *) FileName, Flags);
 #endif
+  my_errno= errno;
   return fd;
 } 
 
