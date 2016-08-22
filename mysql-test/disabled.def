@@ -48,3 +48,4 @@ lowercase_fs_on          : lower_case_table_names=0 is not an error until 10.1
 + ssl                           : sporadic failures: MDEV-10211
 + subselect_innodb              : sporadic failures: MDEV-10614
 + mysqltest                     : sporadic failures: MDEV-9269
++ stat_tables_par_innodb        : MDEV-10515 - sporadic failures

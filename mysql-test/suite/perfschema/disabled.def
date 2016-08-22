@@ -36,5 +36,5 @@ binlog_ok_stmt: needs slave_relay_log_info
 ##########################
 
 + func_file_io                      : MDEV-5708 - fails for s390x
-+ func_mutex tests                  : MDEV-5708 - fails for s390x
++ func_mutex                        : MDEV-5708 - fails for s390x
 + socket_summary_by_event_name_func : sporadic failures: MDEV-10622
