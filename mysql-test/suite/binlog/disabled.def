@@ -6,8 +6,21 @@
 #
 #    <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
 #
+#  To mark a test as unstable, put '+' in front of the testcase name:
+#    +<testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  The difference between disabled and unstable tests is that the former 
+#  have to be skipped (either fail always, or are not applicable), 
+#  while the latter fail sporadically, but can still have value. 
+#  Importantly, unstable tests will be run in buildbot. 
+#
 #  Do not use any TAB characters for whitespace.
 #
 ##############################################################################
 binlog_truncate_innodb	: BUG#11764459 2010-10-20 anitha Originally disabled due to BUG#42643. Product bug fixed, but test changes needed
 binlog_spurious_ddl_errors : BUG#11761680 2013-01-18 astha Fixed on mysql-5.6 and trunk
+
+##########################
+
++ binlog_commit_wait : sporadic failures: MDEV-10150
++ binlog_xa_recover  : sporadic failures: MDEV-8517

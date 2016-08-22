@@ -1,3 +1,25 @@
+##############################################################################
+#
+#  List the test cases that are to be disabled temporarily.
+#
+#  Separate the test case name and the comment with ':'.
+#
+#    <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  To mark a test as unstable, put '+' in front of the testcase name:
+#    + <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  '*' wildcard in testcase names is supported.
+#
+#  The difference between disabled and unstable tests is that the former 
+#  have to be skipped (either fail always, or are not applicable), 
+#  while the latter fail sporadically, but can still have value. 
+#  Importantly, unstable tests will be run in buildbot. 
+#
+#  Do not use any TAB characters for whitespace.
+#
+##############################################################################
+
 partition_max_parts_hash_tokudb: 5.6 test not merged yet
 partition_max_parts_inv_tokudb: 5.6 test not merged yet
 partition_max_parts_key_tokudb: 5.6 test not merged yet
@@ -7,3 +29,7 @@ partition_max_sub_parts_key_list_tokudb: 5.6 test not merged yet
 partition_max_sub_parts_key_range_tokudb: 5.6 test not merged yet
 partition_max_sub_parts_list_tokudb: 5.6 test not merged yet
 partition_max_sub_parts_range_tokudb: 5.6 test not merged yet
+
+##########################
+
++ * : MDEV-9891 - massive crashes on shutdown

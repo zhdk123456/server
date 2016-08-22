@@ -1,3 +1,25 @@
+##############################################################################
+#
+#  List the test cases that are to be disabled temporarily.
+#
+#  Separate the test case name and the comment with ':'.
+#
+#    <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  To mark a test as unstable, put '+' in front of the testcase name:
+#    +<testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  '*' wildcard in testcase names is supported.
+#
+#  The difference between disabled and unstable tests is that the former 
+#  have to be skipped (either fail always, or are not applicable), 
+#  while the latter fail sporadically, but can still have value. 
+#  Importantly, unstable tests will be run in buildbot. 
+#
+#  Do not use any TAB characters for whitespace.
+#
+##############################################################################
+
 alter_table_add_index_token_filters_one_token_filter : Bundled Mroonga does not support token filter yet.
 alter_table_change_token_filter : Bundled Mroonga does not support token filter yet.
 fulltext_token_filters_skip : Bundled Mroonga does not support token filter yet.
@@ -8,3 +30,11 @@ create_table_token_filters_table_comment_one_token_filter : Bundled Mroonga does
 foreign_key_create : Bundled Mroonga does not support this test yet.
 partition_insert : Bundled Mroonga does not support this test yet.
 
+##########################
+
++ column_datetime_32bit_2038                         : sporadic failures: MDEV-9270
++ column_datetime_32bit_before_unix_epoch            : sporadic failures: MDEV-9270
++ column_datetime_32bit_max                          : sporadic failures: MDEV-9270
++ column_datetime_32bit_out_of_range                 : sporadic failures: MDEV-9270
++ index_multiple_column_unique_date_32bit_equal      : sporadic failures: MDEV-9270
++ index_multiple_column_unique_date_order_32bit_desc : sporadic failures: MDEV-9270

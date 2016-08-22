@@ -9,6 +9,8 @@
 #  To mark a test as unstable, put '+' in front of the testcase name:
 #    +<testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
 #
+#  '*' wildcard in testcase names is supported.
+#
 #  The difference between disabled and unstable tests is that the former 
 #  have to be skipped (either fail always, or are not applicable), 
 #  while the latter fail sporadically, but can still have value. 
@@ -18,9 +20,17 @@
 #
 ##############################################################################
 
+
 ##########################
 
-+ innodb.binlog_consistent       : sporadic failures: MDEV-10618
-+ innodb.innodb-alter-table      : sporadic failures: MDEV-10619
-+ innodb.innodb-wl5522-debug-zip : sporadic failures: MDEV-10427
-+ innodb.innodb_bug30423         : sporadic failures: MDEV-7311
++ basic_sql             : sporadic failures: MDEV-9329
++ basic_sql_part        : sporadic failures: MDEV-9329
++ spider_fixes          : sporadic failures: MDEV-9329
++ spider3_fixes         : sporadic failures: MDEV-9329
++ spider3_fixes_part    : sporadic failures: MDEV-9329
++ direct_update         : sporadic failures: MDEV-9329
++ function              : sporadic failures: MDEV-9329
++ direct_aggregate      : sporadic failures: MDEV-9329
++ direct_aggregate_part : sporadic failures: MDEV-9329
+
++ * : MDEV-9329 - tests are too memory-consuming

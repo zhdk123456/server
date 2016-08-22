@@ -6,6 +6,14 @@
 #
 #    <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
 #
+#  To mark a test as unstable, put '+' in front of the testcase name:
+#    +<testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  The difference between disabled and unstable tests is that the former 
+#  have to be skipped (either fail always, or are not applicable), 
+#  while the latter fail sporadically, but can still have value. 
+#  Importantly, unstable tests will be run in buildbot. 
+#
 #  Do not use any TAB characters for whitespace.
 #
 ##############################################################################
@@ -14,3 +22,7 @@ jdbc            : Variable settings depend on machine configuration
 jdbc_new        : Variable settings depend on machine configuration
 jdbc_oracle     : Variable settings depend on machine configuration
 jdbc_postgresql : Variable settings depend on machine configuration
+
+##########################
+
++ tbl    : MDEV-9844, MDEV-10179 - sporadic crashes, valgrind warnings, wrong results

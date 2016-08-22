@@ -6,6 +6,21 @@
 #
 #    <testcasename> : BUG#<xxxx> <comment>
 #
+#  To mark a test as unstable, put '+' in front of the testcase name:
+#    +<testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  The difference between disabled and unstable tests is that the former 
+#  have to be skipped (either fail always, or are not applicable), 
+#  while the latter fail sporadically, but can still have value. 
+#  Importantly, unstable tests will be run in buildbot. 
+#
 #  Do not use any TAB characters for whitespace.
 #
 ##############################################################################
+
+##########################
+
++ federatedx             : sporadic failures: MDEV-10617
++ federated_innodb       : sporadic failures: MDEV-10617, MDEV-8691
++ federated_transactions : sporadic failures: MDEV-10617, MDEV-8691
++ federated_innodb       : sporadic failures: MDEV-8691

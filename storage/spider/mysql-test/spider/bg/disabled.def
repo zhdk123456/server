@@ -20,7 +20,9 @@
 
 ##########################
 
-+ innodb.binlog_consistent       : sporadic failures: MDEV-10618
-+ innodb.innodb-alter-table      : sporadic failures: MDEV-10619
-+ innodb.innodb-wl5522-debug-zip : sporadic failures: MDEV-10427
-+ innodb.innodb_bug30423         : sporadic failures: MDEV-7311
++ direct_aggregate      : sporadic failures: MDEV-7098
++ direct_aggregate_part : sporadic failures: MDEV-7098
++ ha                    : sporadic failures: MDEV-7914, MDEV-9329
++ ha_part               : sporadic failures: MDEV-9329
++ spider_fixes          : sporadic failures: MDEV-7098, MDEV-9329
++ vp_fixes              : sporadic failures: MDEV-9329

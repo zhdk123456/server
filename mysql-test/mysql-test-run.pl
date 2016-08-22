@@ -1203,6 +1203,7 @@ sub command_line_setup {
 	     'force-restart'            => \$opt_force_restart,
              'reorder!'                 => \$opt_reorder,
              'enable-disabled'          => \&collect_option,
+             'enable-unstable'          => \&collect_option,
              'verbose+'                 => \$opt_verbose,
              'verbose-restart'          => \&report_option,
              'sleep=i'                  => \$opt_sleep,
@@ -1595,6 +1596,14 @@ sub command_line_setup {
      $ENV{'BIG_TEST'}= 1;
    }
   $ENV{'STAGING_RUN'}= $opt_staging_run;
+
+  # --------------------------------------------------------------------------
+  # Unstable tests
+  # --------------------------------------------------------------------------
+   if ( $ENV{'MTR_ENABLE_UNSTABLE'} )
+   {
+     collect_option('enable-unstable',1);
+   }
 
   # --------------------------------------------------------------------------
   # Gcov flag
@@ -6455,7 +6464,8 @@ Options to control what test suites or cases to run
                         twice to run only "big" tests.
   staging-run           Run a limited number of tests (no slow tests). Used
                         for running staging trees with valgrind.
-  enable-disabled       Run also tests marked as disabled
+  enable-disabled       Run also tests marked as disabled or unstable
+  enable-unstable       Run also tests marked as unstable
   print-testcases       Don't run the tests but print details about all the
                         selected tests, in the order they would be run.
   skip-test-list=FILE   Skip the tests listed in FILE. Each line in the file

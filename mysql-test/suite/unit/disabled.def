@@ -20,7 +20,4 @@
 
 ##########################
 
-+ innodb.binlog_consistent       : sporadic failures: MDEV-10618
-+ innodb.innodb-alter-table      : sporadic failures: MDEV-10619
-+ innodb.innodb-wl5522-debug-zip : sporadic failures: MDEV-10427
-+ innodb.innodb_bug30423         : sporadic failures: MDEV-7311
++ ma_test_loghandler : sporadic failures: MDEV-10638

@@ -36,6 +36,7 @@ our $do_test;
 our $skip_test;
 our $binlog_format;
 our $enable_disabled;
+our $enable_unstable;
 our $default_storage_engine;
 our $opt_with_ndbcluster_only;
 
@@ -313,6 +314,9 @@ sub combinations_from_file($$)
 }
 
 our %disabled;
+our %disabled_wildcards;
+our %unstable;
+our %unstable_wildcards;
 sub parse_disabled {
   my ($filename, $suitename) = @_;
 
@@ -321,10 +325,21 @@ sub parse_disabled {
       chomp;
       next if /^\s*#/ or /^\s*$/;
       mtr_error("Syntax error in $filename line $.")
-        unless /^\s*(?:([-0-9A-Za-z_\/]+)\.)?([-0-9A-Za-z_]+)\s*:\s*(.*?)\s*$/;
+        unless /^\s*(\+)?\s*(?:([-0-9A-Za-z_\/]+)\.)?([-0-9A-Za-z_\*]+)\s*:\s*(.*?)\s*$/;
       mtr_error("Wrong suite name in $filename line $.")
-        if defined $1 and defined $suitename and $1 ne $suitename;
-      $disabled{($1 || $suitename || '') . ".$2"} = $3;
+        if defined $2 and defined $suitename and $2 ne $suitename;
+      $suitename= $2 || $suitename || '';
+      my ($casename, $unstable_flag, $text)= ($3, $1, $4);
+
+      if ($casename =~ /\*/) {
+        # Wildcard
+        $disabled_wildcards{"$casename"}= $text;
+        $unstable_wildcards{"$casename"}= 1 if defined $unstable_flag;
+      }
+      else {
+        $disabled{$suitename . ".$casename"}= $text;
+        $unstable{$suitename . ".$casename"}= 1 if defined $unstable_flag;
+      }
     }
     close DISABLED;
   }
@@ -721,16 +736,36 @@ sub collect_one_test_case {
   # Check for disabled tests
   # ----------------------------------------------------------------------
   my $disable = $disabled{".$tname"} || $disabled{$name};
+  if (not $disable) {
+    foreach my $w (keys %disabled_wildcards) {
+      if ($tname =~ /^$w/) {
+        $disable= $disabled_wildcards{$w};
+        last;
+      }
+    }
+  }
+  my $unstable = $unstable{".$tname"} || $unstable{$name};
+  if (not $unstable) {
+    foreach my $w (keys %unstable_wildcards) {
+      if ($tname =~ /^$w/) {
+        $unstable= $unstable_wildcards{$w};
+        last;
+      }
+    }
+  }
   if (not defined $disable and $suite->{parent}) {
     $disable = $disabled{$suite->{parent}->{name} . ".$tname"};
+  }
+  if (not defined $unstable and $suite->{parent}) {
+    $unstable = $unstable{$suite->{parent}->{name} . ".$tname"};
   }
   if (defined $disable)
   {
     $tinfo->{comment}= $disable;
-    if ( $enable_disabled )
+    if ( $enable_disabled or ( $enable_unstable and $unstable ) )
     {
-      # User has selected to run all disabled tests
-      mtr_report(" - $tinfo->{name} wil be run although it's been disabled\n",
+      # User has selected to run disabled tests
+      mtr_report(" - $tinfo->{name} will be run although it's been disabled" . ($unstable ? " as unstable\n" : "\n"),
 		 "  due to '$disable'");
     }
     else

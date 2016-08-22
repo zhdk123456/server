@@ -6,6 +6,14 @@
 #
 #    <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
 #
+#  To mark a test as unstable, put '+' in front of the testcase name:
+#    +<testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  The difference between disabled and unstable tests is that the former 
+#  have to be skipped (either fail always, or are not applicable), 
+#  while the latter fail sporadically, but can still have value. 
+#  Importantly, unstable tests will be run in buildbot. 
+#
 #  Do not use any TAB characters for whitespace.
 #
 ##############################################################################
@@ -13,3 +21,33 @@
 rpl_spec_variables        : BUG#11755836 2009-10-27 jasonh rpl_spec_variables fails on PB2 hpux
 rpl_get_master_version_and_clock : Bug#11766137 Jan 05 2011 joro Valgrind warnings rpl_get_master_version_and_clock
 rpl_partition_archive     : MDEV-5077 2013-09-27 svoj Cannot exchange partition with archive table
+
+##########################
+
++ last_insert_id                    : sporadic failures: MDEV-10625
++ rpl_auto_increment                : sporadic failures: MDEV-8691
++ rpl_auto_increment_bug45679       : sporadic failures: MDEV-8691
++ rpl_auto_increment_update_failure : sporadic failures: MDEV-10625
++ rpl_binlog_index                  : sporadic failures: MDEV-9501
++ rpl_checksum_cache                : sporadic failures: MDEV-10626
++ rpl_circular_for_4_hosts          : sporadic failures: MDEV-10627
++ rpl_gtid_crash                    : sporadic failures: MDEV-9501
++ rpl_gtid_master_promote           : sporadic failures: MDEV-10628
++ rpl_gtid_stop_start               : sporadic failures: MDEV-10629
++ rpl_gtid_until                    : sporadic failures: MDEV-10625
++ rpl_insert                        : sporadic failures: MDEV-9329
++ rpl_insert_delayed                : sporadic failures: MDEV-9329
++ rpl_invoked_features              : sporadic failures: MDEV-8691
++ rpl_mdev6020                      : sporadic failures: MDEV-1630
++ rpl_mdev6386                      : sporadic failures: MDEV-10631
++ rpl_parallel                      : sporadic failures: MDEV-10632
++ rpl_parallel_temptable            : sporadic failures: MDEV-10356
++ rpl_row_drop_create_temp_table    : sporadic failures: MDEV-10626
++ rpl_row_sp001                     : sporadic failures: MDEV-9329
++ rpl_semi_sync_uninstall_plugin    : sporadic failures: MDEV-7140
++ rpl_slave_grp_exec                : sporadic failures: MDEV-10514
++ rpl_switch_stm_row_mixed          : sporadic failures: MDEV-10611
++ rpl_sync                          : sporadic failures: MDEV-10633
++ rpl_temporary_error2              : sporadic failures: MDEV-10634
++ sec_behind_master-5114            : sporadic failures: MDEV-8518
++ rpl_skip_replication              : sporadic failures: MDEV-9268

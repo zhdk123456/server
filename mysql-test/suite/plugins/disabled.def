@@ -20,7 +20,6 @@
 
 ##########################
 
-+ innodb.binlog_consistent       : sporadic failures: MDEV-10618
-+ innodb.innodb-alter-table      : sporadic failures: MDEV-10619
-+ innodb.innodb-wl5522-debug-zip : sporadic failures: MDEV-10427
-+ innodb.innodb_bug30423         : sporadic failures: MDEV-7311
++ feedback_plugin_send     : sporadic failures: MDEV-7932
++ server_audit             : sporadic failures: MDEV-9562
++ thread_pool_server_audit : sporadic failures: MDEV-9562

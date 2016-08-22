@@ -6,9 +6,21 @@
 #
 #    <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
 #
+#  To mark a test as unstable, put '+' in front of the testcase name:
+#    +<testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  The difference between disabled and unstable tests is that the former 
+#  have to be skipped (either fail always, or are not applicable), 
+#  while the latter fail sporadically, but can still have value. 
+#  Importantly, unstable tests will be run in buildbot. 
+#
 #  Do not use any TAB characters for whitespace.
 #
 ##############################################################################
 
 innodb_flush_checkpoint_debug_basic: removed from XtraDB-26.0
 table_open_cache_instances_basic: no such variable in MariaDB
+
+##########################
+
++ autocommit_func2 : sporadic failures: MDEV-9329

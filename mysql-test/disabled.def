@@ -6,17 +6,45 @@
 #
 #    <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
 #
+#  To mark a test as unstable, put '+' in front of the testcase name:
+#    + <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  '*' wildcard in testcase names is supported.
+#
+#  The difference between disabled and unstable tests is that the former 
+#  have to be skipped (either fail always, or are not applicable), 
+#  while the latter fail sporadically, but can still have value. 
+#  Importantly, unstable tests will be run in buildbot. 
+#
 #  Do not use any TAB characters for whitespace.
 #
 ##############################################################################
+
 tablespace               : disabled in MariaDB (no TABLESPACE table attribute)
 events_time_zone         : Test is not predictable as it depends on precise timing.
 read_many_rows_innodb    : Bug#11748886 2010-11-15 mattiasj report already exists
 log_tables-big           : Bug#11756699 2010-11-15 mattiasj report already exists
 mysql_embedded           : Bug#12561297 2011-05-14 Anitha Dependent on PB2 changes - eventum#41836
-#show_explain  : Psergey: random timeout in range-checked-for-each record query.
 ssl_crl_clients_valid    : broken upstream
 ssl_crl                  : broken upstream
 ssl_crl_clrpath          : broken upstream
 file_contents            : MDEV-6526 these files are not installed anymore
 lowercase_fs_on          : lower_case_table_names=0 is not an error until 10.1
+
+##########################
+
++ create_delayed                : sporadic failures: MDEV-10605
++ host_cache_size_functionality : sporadic failures: MDEV-10606
++ index_merge_innodb            : sporadic failures: MDEV-7142
++ innodb_mysql_lock             : sporadic failures: MDEV-7861
++ mdev-504                      : sporadic failures: MDEV-10607
++ mdev375                       : sporadic failures: MDEV-10607
++ merge                         : sporadic failures: MDEV-10607
++ mysqldump                     : sporadic failures: MDEV-10512
++ pool_of_threads               : sporadic failures: MDEV-10100
++ query_cache                   : sporadic failures: MDEV-10611
++ shutdown                      : sporadic failures: MDEV-10612
++ sp-security                   : sporadic failures: MDEV-10607
++ ssl                           : sporadic failures: MDEV-10211
++ subselect_innodb              : sporadic failures: MDEV-10614
++ mysqltest                     : sporadic failures: MDEV-9269

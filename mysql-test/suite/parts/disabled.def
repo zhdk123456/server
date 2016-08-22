@@ -6,6 +6,14 @@
 #
 #    <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
 #
+#  To mark a test as unstable, put '+' in front of the testcase name:
+#    +<testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  The difference between disabled and unstable tests is that the former 
+#  have to be skipped (either fail always, or are not applicable), 
+#  while the latter fail sporadically, but can still have value. 
+#  Importantly, unstable tests will be run in buildbot. 
+#
 #  Do not use any TAB characters for whitespace.
 #
 ##############################################################################
@@ -15,3 +23,8 @@ parts.partition_mgm_lc1_archive : MDEV-5077 2013-09-27 svoj Cannot exchange part
 parts.partition_exchange_archive: MDEV-5077 2013-09-27 svoj Cannot exchange partition with archive table
 parts.partition_mgm_lc0_archive : MDEV-5077 2013-09-27 svoj Cannot exchange partition with archive table
 parts.partition_mgm_lc2_archive : MDEV-5077 2013-09-27 svoj Cannot exchange partition with archive table
+
+##########################
+
++ partition_float_myisam : sporadic failures: MDEV-10621
++ partition_int_myisam   : sporadic failures: MDEV-10621

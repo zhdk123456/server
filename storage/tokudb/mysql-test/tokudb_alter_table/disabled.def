@@ -7,7 +7,9 @@
 #    <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
 #
 #  To mark a test as unstable, put '+' in front of the testcase name:
-#    +<testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#    + <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  '*' wildcard in testcase names is supported.
 #
 #  The difference between disabled and unstable tests is that the former 
 #  have to be skipped (either fail always, or are not applicable), 
@@ -18,9 +20,7 @@
 #
 ##############################################################################
 
+
 ##########################
 
-+ innodb.binlog_consistent       : sporadic failures: MDEV-10618
-+ innodb.innodb-alter-table      : sporadic failures: MDEV-10619
-+ innodb.innodb-wl5522-debug-zip : sporadic failures: MDEV-10427
-+ innodb.innodb_bug30423         : sporadic failures: MDEV-7311
++ * : MDEV-9891 - massive crashes on shutdown
