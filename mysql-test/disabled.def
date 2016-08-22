@@ -33,19 +33,55 @@ lowercase_fs_on          : lower_case_table_names=0 is not an error until 10.1
 
 ##########################
 
-+ create_delayed                : sporadic failures: MDEV-10605
-+ host_cache_size_functionality : sporadic failures: MDEV-10606
-+ index_merge_innodb            : sporadic failures: MDEV-7142
-+ innodb_mysql_lock             : sporadic failures: MDEV-7861
-+ mdev-504                      : sporadic failures: MDEV-10607
-+ mdev375                       : sporadic failures: MDEV-10607
-+ merge                         : sporadic failures: MDEV-10607
-+ mysqldump                     : sporadic failures: MDEV-10512
-+ pool_of_threads               : sporadic failures: MDEV-10100
-+ query_cache                   : sporadic failures: MDEV-10611
-+ shutdown                      : sporadic failures: MDEV-10612
-+ sp-security                   : sporadic failures: MDEV-10607
-+ ssl                           : sporadic failures: MDEV-10211
-+ subselect_innodb              : sporadic failures: MDEV-10614
-+ mysqltest                     : sporadic failures: MDEV-9269
-+ stat_tables_par_innodb        : MDEV-10515 - sporadic failures
++ bootstrap                     : Modified on 2016-06-18 (MDEV-9969)
++ create_delayed                : MDEV-10605 - failed with timeout
++ create_or_replace             : Modified on 2016-06-23 (MDEV-9728)
++ ctype_recoding                : Modified on 2016-06-10 (MDEV-10181)
++ ctype_utf8                    : Modified on 2016-06-21 (merge)
++ ctype_utf8mb4                 : Modified on 2016-06-21 (merge)
++ events_1                      : Modified on 2016-06-21 (MDEV-9524)
++ func_group                    : Modified on 2016-08-08 (MDEV-10468)
++ func_in                       : Modified on 2016-06-20 (MDEV-10020)
++ func_math                     : Modified on 2016-08-10 (merge)
++ func_misc                     : Modified on 2016-08-10 (merge)
++ grant2                        : Modified on 2016-07-18 (MDEV-8569)
++ help                          : Modified on 2016-06-21 (MDEV-9524)
++ host_cache_size_functionality : MDEV-10606 - sporadic failure on shutdown
++ index_intersect_innodb        : MDEV-10643 - failed with timeout
++ index_merge_innodb            : MDEV-7142  - sporadic wrong execution plan
++ information_schema_stats      : Modified on 2016-07-25 (MDEV-10428)
++ innodb_mysql_lock             : MDEV-7861  - sporadic lock detection failure
++ insert_innodb                 : Modified on 2016-06-14 (merge from upstream)
++ loaddata                      : Modified on 2016-08-10 (merge)
++ locale                        : Modified on 2016-06-21 (merge)
++ mdev-504                      : MDEV-10607 - sporadic "can't connect"
++ mdev375                       : MDEV-10607 - sporadic "can't connect"
++ merge                         : MDEV-10607 - sporadic "can't connect"
++ multi_update                  : Modified on 2016-06-20 (MDEV-5973)
++ myisam_enable_keys-10506      : Added on 2016-08-10 (MDEV-10506)
++ mysqlcheck                    : Modified on 2016-08-10 (merge)
++ mysqldump                     : MDEV-10512 - sporadic assertion failure
++ mysqltest                     : MDEV-9269  - fails on Alpha
++ named_pipe                    : Modified on 2016-08-02 (MDEV-10383)
++ openssl_1                     : Modified on 2016-07-11 (MDEV-10211)
++ parser                        : Modified on 2016-06-21 (merge)
++ pool_of_threads               : MDEV-10100 - sporadic error on detecting max connections
++ ps_1general                   : Modified on 2016-07-12 (merge)
++ range                         : Modified on 2016-08-10 (merge)
++ range_mrr_icp                 : Modified on 2016-08-10 (merge)
++ query_cache                   : MDEV-10611 - sporadic mutex problem
++ shutdown                      : MDEV-10612 - sporadic crashes
++ sp-prelocking                 : Modified on 2016-08-10 (merge)
++ sp-security                   : MDEV-10607 - sporadic "can't connect"
++ ssl                           : MDEV-10211 - different ciphers on some platforms
++ ssl_ca                        : Modified on 2016-07-11 (MDEV-10211)
++ ssl_compress                  : Modified on 2016-07-11 (MDEV-10211)
++ ssl_timeout                   : Modified on 2016-07-11 (MDEV-10211)
++ stat_tables_par_innodb        : MDEV-10515 - sporadic wrong results
++ status_user                   : Modified on 2016-06-20 (MDEV-8633)
++ subselect_innodb              : MDEV-10614 - sporadic wrong results
++ temp_table                    : Modified on 2016-06-18 (MDEV-8569)
++ type_date                     : Modified on 2016-08-10 (merge)
++ type_datetime                 : Modified on 2016-06-16 (MDEV-9374)
++ view                          : Modified on 2016-08-10 (merge)
++ xtradb_mrr                    : Modified on 2016-08-04 (MDEV-9946)

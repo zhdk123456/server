@@ -21,5 +21,6 @@
 
 ##########################
 
++ charsets         : Added on 2016-06-23
 + not_supported    : sporadic failures: MDEV-10639
 + vcol_keys_innodb : sporadic failures: MDEV-10639

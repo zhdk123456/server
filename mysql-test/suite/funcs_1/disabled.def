@@ -1,12 +1,22 @@
 ##############################################################################
 #
-#  List the test cases that are to be disabled temporarely.
+#  List the test cases that are to be disabled temporarily.
 #
 #  Separate the test case name and the comment with ':'.
 #
-#      <testcasename>  : Comment test
+#    <testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
 #
-#  Don't use any TAB characters for whitespace.
+#  To mark a test as unstable, put '+' in front of the testcase name:
+#    +<testcasename> : BUG#<xxxx> <date disabled> <disabler> <comment>
+#
+#  The difference between disabled and unstable tests is that the former 
+#  have to be skipped (either fail always, or are not applicable), 
+#  while the latter fail sporadically, but can still have value. 
+#  Importantly, unstable tests will be run in buildbot. 
+#
+#  Do not use any TAB characters for whitespace.
 #
 ##############################################################################
 
++ processlist_priv_no_prot : Include file modified on 2016-07-12 (merge)
++ processlist_priv_ps      : Include file modified on 2016-07-12 (merge)

@@ -23,4 +23,5 @@ binlog_spurious_ddl_errors : BUG#11761680 2013-01-18 astha Fixed on mysql-5.6 an
 ##########################
 
 + binlog_commit_wait : sporadic failures: MDEV-10150
++ binlog_dmls_on_tmp_tables_readonly : Added on 2016-05-04 (upstream)
 + binlog_xa_recover  : sporadic failures: MDEV-8517

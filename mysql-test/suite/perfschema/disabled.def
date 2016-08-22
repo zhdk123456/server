@@ -35,6 +35,14 @@ binlog_ok_stmt: needs slave_relay_log_info
 
 ##########################
 
++ digest_table_full                 : Modified on 2016-06-21 (merge)
 + func_file_io                      : MDEV-5708 - fails for s390x
 + func_mutex                        : MDEV-5708 - fails for s390x
++ rpl_gtid_func                     : Modified on 2016-06-21 (merge)
++ sizing_low                        : Modified on 2016-04-26 (5.6.30 merge)
 + socket_summary_by_event_name_func : sporadic failures: MDEV-10622
++ start_server_low_digest           : Modified on 2016-06-21 (merge)
++ statement_digest                  : Modified on 2016-06-21 (merge)
++ statement_digest_consumers        : Modified on 2016-06-21 (merge)
++ statement_digest_long_query       : Modified on 2016-06-21 (merge)
++ table_name                        : Added on 2016-04-26 (5.6.30 merge)

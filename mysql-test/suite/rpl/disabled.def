@@ -35,6 +35,7 @@ rpl_partition_archive     : MDEV-5077 2013-09-27 svoj Cannot exchange partition 
 + rpl_gtid_master_promote           : sporadic failures: MDEV-10628
 + rpl_gtid_stop_start               : sporadic failures: MDEV-10629
 + rpl_gtid_until                    : sporadic failures: MDEV-10625
++ rpl_ignore_table                  : Modified on 2016-06-22
 + rpl_insert                        : sporadic failures: MDEV-9329
 + rpl_insert_delayed                : sporadic failures: MDEV-9329
 + rpl_invoked_features              : sporadic failures: MDEV-8691

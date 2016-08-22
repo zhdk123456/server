@@ -23,4 +23,6 @@ table_open_cache_instances_basic: no such variable in MariaDB
 
 ##########################
 
-+ autocommit_func2 : sporadic failures: MDEV-9329
++ autocommit_func2          : sporadic failures: MDEV-9329
++ general_log_file_basic    : Modified on 2016-08-09 (MDEV-10465)
++ slow_query_log_file_basic : Modified on 2016-08-09 (MDEV-10465)
