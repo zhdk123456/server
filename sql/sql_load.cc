@@ -156,12 +156,6 @@ class READ_INFO {
     int chlen;
     if ((chlen= my_charlen(read_charset, str->end() - 1, str->end())) == 1)
       return false; // Single byte character found
-    if (chlen == 0)
-    {
-      my_error(ER_INVALID_CHARACTER_STRING, MYF(0),
-               read_charset->csname, str->c_ptr());
-      return false;
-    }
     for (uint32 length0= str->length() - 1 ; MY_CS_IS_TOOSMALL(chlen); )
     {
       int chr= GET;
