@@ -34,6 +34,7 @@
 #include <sstream>
 #include <fstream>
 
+#include <aws/core/Aws.h>
 #include <aws/core/client/AWSError.h>
 #include <aws/core/utils/logging/AWSLogging.h>
 #include <aws/core/utils/logging/ConsoleLogSystem.h>
@@ -148,13 +149,18 @@ protected:
 static int plugin_init(void *p)
 {
   DBUG_ENTER("plugin_init");
+
+  Aws::SDKOptions options;
+  Aws::InitAPI(options);
+  InitializeAWSLogging(Aws::MakeShared<MySQLLogSystem>("aws_key_management_plugin", (Aws::Utils::Logging::LogLevel) log_level));
+
   client = new KMSClient();
   if (!client)
   {
     sql_print_error("Can not initialize KMS client");
     DBUG_RETURN(-1);
   }
-  InitializeAWSLogging(Aws::MakeShared<MySQLLogSystem>("aws_key_management_plugin", (Aws::Utils::Logging::LogLevel) log_level));
+  
 #ifdef HAVE_PSI_INTERFACE
   mysql_mutex_register("aws_key_management", &mtx_info, 1);
 #endif
@@ -189,6 +195,9 @@ static int plugin_deinit(void *p)
   mysql_mutex_destroy(&mtx);
   delete client;
   ShutdownAWSLogging();
+
+  Aws::SDKOptions options;
+  Aws::ShutdownAPI(options);
   DBUG_RETURN(0);
 }
 
