@@ -139,6 +139,7 @@ protected:
   }
 };
 
+Aws::SDKOptions sdkOptions;
 
 /* 
   Plugin initialization.
@@ -150,8 +151,14 @@ static int plugin_init(void *p)
 {
   DBUG_ENTER("plugin_init");
 
-  Aws::SDKOptions options;
-  Aws::InitAPI(options);
+#ifdef HAVE_YASSL
+  sdkOptions.cryptoOptions.initAndCleanupOpenSSL = true;
+#else
+  /* Server initialized OpenSSL already, thus AWS must skip it */
+  sdkOptions.cryptoOptions.initAndCleanupOpenSSL = false;
+#endif
+
+  Aws::InitAPI(sdkOptions);
   InitializeAWSLogging(Aws::MakeShared<MySQLLogSystem>("aws_key_management_plugin", (Aws::Utils::Logging::LogLevel) log_level));
 
   client = new KMSClient();
@@ -196,8 +203,7 @@ static int plugin_deinit(void *p)
   delete client;
   ShutdownAWSLogging();
 
-  Aws::SDKOptions options;
-  Aws::ShutdownAPI(options);
+  Aws::ShutdownAPI(sdkOptions);
   DBUG_RETURN(0);
 }
 

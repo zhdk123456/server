@@ -21,12 +21,6 @@ MACRO(SKIP_AWS_PLUGIN msg)
   RETURN()
 ENDMACRO()
 
-MYSQL_ADD_PLUGIN(aws_key_management aws_key_management_plugin.cc DISABLED
-                 COMPONENT aws-key-management)
-
-IF(NOT TARGET aws_key_management)
-  RETURN()
-ENDIF()
 
 # This plugin needs recent C++ compilers (AWS C++ SDK header files are using C++11 features)
 SET(CXX11_FLAGS)
@@ -57,6 +51,7 @@ IF (NOT(WIN32 OR APPLE  OR (CMAKE_SYSTEM_NAME MATCHES "Linux")))
 ENDIF()
 
 
+
 FIND_LIBRARY(AWS_CPP_SDK_CORE NAMES aws-cpp-sdk-core PATH_SUFFIXES  "${SDK_INSTALL_BINARY_PREFIX}")
 FIND_LIBRARY(AWS_CPP_SDK_KMS NAMES aws-cpp-sdk-core PATH_SUFFIXES  "${SDK_INSTALL_BINARY_PREFIX}")
 SET(CMAKE_REQUIRED_FLAGS ${CXX11_FLAGS})
@@ -81,6 +76,16 @@ ELSE()
       SKIP_AWS_PLUGIN("AWS C++ SDK requires libcurl development package")
     ENDIF()
     SET(PIC_FLAG -fPIC)
+    FIND_PATH(UUID_INCLUDE_DIR uuid/uuid.h)
+    IF(NOT UUID_INCLUDE_DIR)
+      SKIP_AWS_PLUGIN("AWS C++ SDK requires uuid development package")
+    ENDIF()
+    IF(NOT APPLE)
+      FIND_LIBRARIES(UUID_LIBRARIES uuid)
+      IF(NOT UUID_LIBRARIES)
+        SKIP_AWS_PLUGIN("AWS C++ SDK requires uuid development package")
+      ENDIF()
+    ENDIF()
   ENDIF()
   IF(MSVC)
     SET(EXTRA_SDK_CMAKE_FLAGS -DCMAKE_CXX_FLAGS_DEBUGOPT="" -DCMAKE_EXE_LINKER_FLAGS_DEBUGOPT="" "-DCMAKE_CXX_FLAGS=/wd4530 /WX-")
@@ -108,7 +113,7 @@ ELSE()
     -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/aws_sdk_cpp
     TEST_COMMAND ""
   )
-
+  set_target_properties(aws_sdk_cpp PROPERTIES EXCLUDE_FROM_ALL TRUE)
   # We do not need to build the whole SDK , just 2 of its libs
   set(AWS_SDK_LIBS aws-cpp-sdk-core aws-cpp-sdk-kms)
   FOREACH(lib ${AWS_SDK_LIBS})
@@ -131,5 +136,8 @@ ELSE()
   INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/aws_sdk_cpp/include)
 ENDIF()
 
+ADD_DEFINITIONS(${SSL_DEFINES}) # Need to know whether openssl should be initialized
+MYSQL_ADD_PLUGIN(aws_key_management aws_key_management_plugin.cc 
+                 COMPONENT aws-key-management)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  ${CXX11_FLAGS}")
 TARGET_LINK_LIBRARIES(aws_key_management ${AWS_SDK_LIBS})
