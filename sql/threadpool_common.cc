@@ -92,6 +92,41 @@ struct Worker_thread_context
 };
 
 
+#ifdef HAVE_PSI_INTERFACE
+
+/*
+  The following fixes PSI "idle" psi instrumentation.
+  The server assumes that connection  becomes idle
+  just before net_read_packet() and switches to active after it.
+  In out setup, server becomes idle when async socket io is made.
+*/
+
+extern void net_before_header_psi(struct st_net *net, void *user_data, size_t);
+
+static void dummy_before_header(struct st_net *, void *, size_t)
+{
+}
+
+static void re_init_net_server_extension(THD *thd)
+{
+  thd->m_net_server_extension.m_before_header = dummy_before_header;
+}
+
+#else
+
+#define re_init_net_server_extension(thd)
+
+#endif /* HAVE_PSI_INTERFACE */
+
+
+static inline void set_thd_idle(THD *thd)
+{
+  thd->net.reading_or_writing= 1;
+#ifdef HAVE_PSI_INTERFACE
+  net_before_header_psi(&thd->net, thd, 0);
+#endif
+}
+
 /*
   Attach/associate the connection with the OS thread,
 */
@@ -141,29 +176,30 @@ int threadpool_add_connection(THD *thd)
 
   /* Login. */
   thread_attach(thd);
+  re_init_net_server_extension(thd);
   ulonglong now= microsecond_interval_timer();
   thd->prior_thr_create_utime= now;
   thd->start_utime= now;
   thd->thr_create_utime= now;
 
-  if (!setup_connection_thread_globals(thd))
-  {
-    if (!login_connection(thd))
-    {
-      prepare_new_connection_state(thd);
-      
-      /* 
-        Check if THD is ok, as prepare_new_connection_state()
-        can fail, for example if init command failed.
-      */
-      if (thd_is_connection_alive(thd))
-      {
-        retval= 0;
-        thd->net.reading_or_writing= 1;
-        thd->skip_wait_timeout= true;
-      }
-    }
-  }
+  if (setup_connection_thread_globals(thd))
+    goto end;
+
+  if (thd_prepare_connection(thd))
+    goto end;
+
+  /* 
+    Check if THD is ok, as prepare_new_connection_state()
+    can fail, for example if init command failed.
+  */
+  if (!thd_is_connection_alive(thd))
+    goto end;
+
+  retval= 0;
+  thd->skip_wait_timeout= true;
+  set_thd_idle(thd);
+
+end:
   worker_context.restore();
   return retval;
 }
@@ -245,12 +281,13 @@ int threadpool_process_request(THD *thd)
       goto end;
     }
 
+    set_thd_idle(thd);
+
     vio= thd->net.vio;
     if (!vio->has_data(vio))
     { 
       /* More info on this debug sync is in sql_parse.cc*/
       DEBUG_SYNC(thd, "before_do_command_net_read");
-      thd->net.reading_or_writing= 1;
       goto end;
     }
   }
