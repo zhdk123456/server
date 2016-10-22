@@ -18428,9 +18428,6 @@ evaluate_join_record(JOIN *join, JOIN_TAB *join_tab,
 
   join_tab->tracker->r_rows++;
 
-  if (join_tab->table->vfield)
-    join_tab->table->update_virtual_fields(VCOL_UPDATE_FOR_READ);
-
   if (select_cond)
   {
     select_cond_result= MY_TEST(select_cond->val_int());
@@ -18881,8 +18878,6 @@ join_read_system(JOIN_TAB *tab)
       empty_record(table);			// Make empty record
       return -1;
     }
-    if (table->vfield)
-      table->update_virtual_fields(VCOL_UPDATE_FOR_READ);
     store_record(table,record[1]);
   }
   else if (!table->status)			// Only happens with left join
@@ -18928,8 +18923,6 @@ join_read_const(JOIN_TAB *tab)
 	return report_error(table, error);
       return -1;
     }
-    if (table->vfield)
-      table->update_virtual_fields(VCOL_UPDATE_FOR_READ);
     store_record(table,record[1]);
   }
   else if (!(table->status & ~STATUS_NULL_ROW))	// Only happens with left join
