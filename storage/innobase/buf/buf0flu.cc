@@ -3239,6 +3239,7 @@ DECLARE_THREAD(buf_flush_page_cleaner_coordinator)(
 
 			if (curr_time > next_loop_time + 3000) {
 				if (warn_count == 0) {
+                                  if (!(test_flags & TEST_SIGINT))
 					ib::info() << "page_cleaner: 1000ms"
 						" intended loop took "
 						<< 1000 + curr_time
