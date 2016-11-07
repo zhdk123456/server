@@ -2334,7 +2334,7 @@ end_create:
   if (vcol)                                                               \
   {                                                                       \
     (vcol)= (Virtual_column_info*)(thd)->memdup((vcol), sizeof(*(vcol))); \
-    (vcol)->expr_item= NULL;                                              \
+    (vcol)->expr= NULL;                                                   \
   }
 
 /**
