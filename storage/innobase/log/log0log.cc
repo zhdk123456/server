@@ -2196,6 +2196,9 @@ loop:
 			count = 0;
 		}
 
+                /* Wake up purge threads to die - they have THDs and thus
+                might keep open transactions */
+	        srv_purge_wakeup();
 		goto loop;
 	}
 

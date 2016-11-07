@@ -1564,7 +1564,8 @@ enum enum_thread_type
   SYSTEM_THREAD_EVENT_SCHEDULER= 8,
   SYSTEM_THREAD_EVENT_WORKER= 16,
   SYSTEM_THREAD_BINLOG_BACKGROUND= 32,
-  SYSTEM_THREAD_SLAVE_BACKGROUND= 64
+  SYSTEM_THREAD_SLAVE_BACKGROUND= 64,
+  SYSTEM_THREAD_GENERIC= 128
 };
 
 inline char const *
@@ -2025,14 +2026,14 @@ private:
   void dec_thread_count(void)
   {
     DBUG_ASSERT(thread_count > 0);
-    thread_safe_decrement32(const_cast<int32*>(&thread_count));
+    thread_safe_decrement32(&thread_count);
     signal_thd_deleted();
   }
 
 
   void inc_thread_count(void)
   {
-    thread_safe_increment32(const_cast<int32*>(&thread_count));
+    thread_safe_increment32(&thread_count);
   }
 
 public:
