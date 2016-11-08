@@ -153,6 +153,10 @@ log_notice () {
   log_generic daemon.notice "$@"
 }
 
+eval_as_user() {
+  su -s /bin/sh -c "$1" $user
+}
+
 eval_log_error () {
   cmd="$1"
   case $logging in
@@ -604,7 +608,7 @@ then
   logging=file
 
   if [ ! -f "$err_log" ]; then                  # if error log already exists,
-    touch "$err_log"                            # we just append. otherwise,
+    eval_as_user "touch '$err_log'"             # we just append. otherwise,
     chmod "$fmode" "$err_log"                   # fix the permissions here!
   fi
 
@@ -633,8 +637,7 @@ then
   fi
   # Change the err log to the right user, if it is in use
   if [ $want_syslog -eq 0 ]; then
-    touch "$err_log"
-    chown $user "$err_log"
+    eval_as_user "touch '$err_log'"
   fi
   if test -n "$open_files"
   then
@@ -888,8 +891,8 @@ do
   eval_log_error "$cmd"
 
   if [ $want_syslog -eq 0 -a ! -f "$err_log" ]; then
-    touch "$err_log"                    # hypothetical: log was renamed but not
-    chown $user "$err_log"              # flushed yet. we'd recreate it with
+    eval_as_user "touch '$err_log'"     # hypothetical: log was renamed but not
+                                        # flushed yet. we'd recreate it with
     chmod "$fmode" "$err_log"           # wrong owner next time we log, so set
   fi                                    # it up correctly while we can!
 
