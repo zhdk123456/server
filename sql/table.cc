@@ -2912,10 +2912,6 @@ static bool check_vcol_forward_refs(Field *field, Virtual_column_info *vcol)
 }
 
 /*
-  Read data from a binary .frm file from MySQL 3.23 - 5.0 into TABLE_SHARE
-*/
-
-/*
   Open a table based on a TABLE_SHARE
 
   SYNOPSIS
