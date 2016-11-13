@@ -1,4 +1,5 @@
 SET TIME_ZONE = "+00:00";
+SET SQL_MODE = 'NO_ENGINE_SUBSTITUTION';
 
 --echo #
 --echo # Test of errors for column data types that dont support function
