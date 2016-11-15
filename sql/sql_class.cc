@@ -4382,19 +4382,57 @@ extern "C" int thd_is_connected(MYSQL_THD thd)
 
 
 #ifdef INNODB_COMPATIBILITY_HOOKS
-MYSQL_THD create_thd(int use_next_id)
+
+/** open a table, add it to thd->open_tables, no locks, not opened in the engine
+
+  XXX At the moment this is used in innodb background purge threads
+  *only*.There should be no table locks, because the background purge does not
+  change the table as far as LOCK TABLES is concerned. Similarly,
+  no MDL or global read lock protection is needed.
+
+  To make sure no table stays open for long, this helper allows the thread to
+  have only one table open at any given time.
+*/
+TABLE *open_purge_table(THD *thd, const char *db, size_t dblen,
+                        const char *tb, size_t tblen)
 {
-  THD *thd= new THD(use_next_id ? next_thread_id() : 0);
-  thd->thread_stack= (char*) &thd;
-  thd->store_globals();
-  thd->set_command(COM_DAEMON);
-  add_to_active_threads(thd);
-  return thd;
+  DBUG_ENTER("open_purge_table");
+  DBUG_ASSERT(thd->open_tables == NULL);
+  DBUG_ASSERT(thd->locked_tables_mode < LTM_PRELOCKED);
+
+  Open_table_context ot_ctx(thd, 0);
+  TABLE_LIST *tl= (TABLE_LIST*)thd->alloc(sizeof(TABLE_LIST));
+
+  tl->init_one_table(db, dblen, tb, tblen, tb, TL_READ);
+  tl->i_s_requested_object= OPEN_TABLE_ONLY;
+
+  bool error= open_table(thd, tl, &ot_ctx);
+
+  /* we don't recover here */
+  DBUG_ASSERT(!error || !ot_ctx.can_recover_from_failed_open());
+
+  if (error)
+    close_thread_tables(thd);
+
+  DBUG_RETURN(error ? NULL : tl->table);
 }
 
-void destroy_thd(MYSQL_THD thd)
+TABLE *find_fk_open_table(THD *thd, const char *db, size_t db_len,
+                       const char *table, size_t table_len)
 {
-  delete_running_thd(thd);
+  for (TABLE *t= thd->open_tables; t; t= t->next)
+  {
+    if (t->s->db.length == db_len && t->s->table_name.length == table_len &&
+        !strcmp(t->s->db.str, db) && !strcmp(t->s->table_name.str, table) &&
+        t->pos_in_table_list->prelocking_placeholder == TABLE_LIST::FK)
+      return t;
+  }
+  return NULL;
+}
+
+extern "C" unsigned long long thd_get_query_id(const MYSQL_THD thd)
+{
+  return((unsigned long long)thd->query_id);
 }
 
 extern "C" const struct charset_info_st *thd_charset(MYSQL_THD thd)
@@ -4858,6 +4896,29 @@ extern "C" void thd_wait_end(MYSQL_THD thd)
   MYSQL_CALLBACK(thd->scheduler, thd_wait_end, (thd));
 }
 
+
+MYSQL_THD create_thd(int use_next_id)
+{
+  THD *thd= new THD(use_next_id ? next_thread_id() : 0);
+  thd->thread_stack= (char*) &thd;
+  thd->store_globals();
+  thd->set_command(COM_DAEMON);
+  add_to_active_threads(thd);
+  return thd;
+}
+
+void destroy_thd(MYSQL_THD thd)
+{
+  delete_running_thd(thd);
+}
+
+void thd_reset(MYSQL_THD thd)
+{
+  close_thread_tables(thd);
+  thd->mdl_context.release_transactional_locks();
+  thd->free_items();
+  free_root(thd->mem_root, MYF(MY_KEEP_PREALLOC));
+}
 #endif // INNODB_COMPATIBILITY_HOOKS */
 
 /****************************************************************************
@@ -5721,7 +5782,8 @@ int THD::decide_logging_format(TABLE_LIST *tables)
 
       replicated_tables_count++;
 
-      if (table->lock_type <= TL_READ_NO_INSERT)
+      if (table->lock_type <= TL_READ_NO_INSERT &&
+          table->prelocking_placeholder != TABLE_LIST::FK)
         has_read_tables= true;
       else if (table->table->found_next_number_field &&
                 (table->lock_type >= TL_WRITE_ALLOW_WRITE))

@@ -2400,7 +2400,7 @@ row_upd_sec_index_entry(
 		mtr_commit(&mtr);
 		mtr_start(&mtr);
 		ut_ad(btr_validate_index(index, 0, false));
-		ut_ad(0);
+		//ut_ad(0);
 #endif /* UNIV_DEBUG */
 		break;
 	case ROW_FOUND:

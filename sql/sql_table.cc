@@ -6314,20 +6314,23 @@ static bool fill_alter_inplace_info(THD *thd,
        about nature of changes than those provided from parser.
   */
   bool maybe_alter_vcol= false;
-  for (f_ptr= table->field; (field= *f_ptr); f_ptr++)
+  uint field_stored_index= 0;
+  for (f_ptr= table->field; (field= *f_ptr); f_ptr++,
+                               field_stored_index+= field->stored_in_db())
   {
     /* Clear marker for renamed or dropped field
     which we are going to set later. */
     field->flags&= ~(FIELD_IS_RENAMED | FIELD_IS_DROPPED);
 
     /* Use transformed info to evaluate flags for storage engine. */
-    uint new_field_index= 0;
+    uint new_field_index= 0, new_field_stored_index= 0;
     new_field_it.init(alter_info->create_list);
     while ((new_field= new_field_it++))
     {
       if (new_field->field == field)
         break;
       new_field_index++;
+      new_field_stored_index+= new_field->stored_in_db();
     }
 
     if (new_field)
@@ -6465,11 +6468,14 @@ static bool fill_alter_inplace_info(THD *thd,
       /*
         Detect changes in column order.
       */
-      if (field->field_index != new_field_index)
+      if (field->stored_in_db())
       {
-        if (field->stored_in_db())
+        if (field_stored_index != new_field_stored_index)
           ha_flags|= Inpl::ALTER_STORED_COLUMN_ORDER;
-        else
+      }
+      else
+      {
+        if (field->field_index != new_field_index)
           ha_flags|= Inpl::ALTER_VIRTUAL_COLUMN_ORDER;
       }
 

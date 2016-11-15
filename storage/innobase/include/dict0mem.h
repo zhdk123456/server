@@ -1444,6 +1444,14 @@ struct dict_vcol_templ_t {
 
 	/** default column value if any */
 	byte*			default_rec;
+
+	/** cached MySQL TABLE object */
+	void*			mysql_table;
+
+	/** when mysql_table was cached */
+	uint64_t		mysql_table_query_id;
+
+        dict_vcol_templ_t() : vtempl(0), mysql_table_query_id(-1) {}
 };
 
 /* This flag is for sync SQL DDL and memcached DML.

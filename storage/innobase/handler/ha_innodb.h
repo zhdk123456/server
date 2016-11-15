@@ -789,6 +789,8 @@ public:
 	@return NULL if valid, string name of bad option if not. */
 	const char* create_options_are_invalid();
 
+        bool gcols_in_fulltest_or_spatial();
+
 	/** Validates engine specific table options not handled by
 	SQL-parser.
 	@return NULL if valid, string name of bad option if not. */
@@ -1127,7 +1129,7 @@ innodb_rec_per_key(
 	ha_rows		records);
 
 /** Build template for the virtual columns and their base columns
-@param[in]	share		MySQL TABLE_SHARE
+@param[in]	table		MySQL TABLE
 @param[in]	ib_table	InnoDB dict_table_t
 @param[in,out]	s_templ		InnoDB template structure
 @param[in]	add_v		new virtual columns added along with
@@ -1135,7 +1137,7 @@ innodb_rec_per_key(
 @param[in]	locked		true if innobase_share_mutex is held */
 void
 innobase_build_v_templ(
-	const TABLE_SHARE*	share,
+	const TABLE*		table,
 	const dict_table_t*	ib_table,
 	dict_vcol_templ_t*	s_templ,
 	const dict_add_v_col_t*	add_v,
@@ -1167,19 +1169,3 @@ ib_push_frm_error(
 	ulint		n_keys,		/*!< in: InnoDB #keys */
 	bool		push_warning);	/*!< in: print warning ? */
 
-/*****************************************************************//**
-Validates the create options. We may build on this function
-in future. For now, it checks two specifiers:
-KEY_BLOCK_SIZE and ROW_FORMAT
-If innodb_strict_mode is not set then this function is a no-op
-@return	NULL if valid, string if not. */
-UNIV_INTERN
-const char*
-create_options_are_invalid(
-/*=======================*/
-	THD*		thd,		/*!< in: connection thread. */
-	TABLE*		form,		/*!< in: information on table
-					columns and indexes */
-	HA_CREATE_INFO*	create_info,	/*!< in: create info. */
-	bool		use_tablespace)	/*!< in: srv_file_per_table */
-	MY_ATTRIBUTE((nonnull, warn_unused_result));
