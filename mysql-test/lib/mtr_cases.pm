@@ -292,7 +292,7 @@ sub combinations_from_file($$)
   } else {
     return () if @::opt_combinations or not -f $filename;
     # Read combinations file in my.cnf format
-    mtr_verbose("Read combinations file");
+    mtr_verbose("Read combinations file $filename");
     my $config= My::Config->new($filename);
     foreach my $group ($config->option_groups()) {
       my $comb= { name => $group->name(), comb_opt => [] };
