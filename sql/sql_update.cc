@@ -1739,6 +1739,7 @@ int multi_update::prepare(List<Item> &not_used_values,
       table->pos_in_table_list= tl;
       table->prepare_triggers_for_update_stmt_or_event();
       table->reset_default_fields();
+      table->mark_columns_needed_for_update();
     }
   }
 
@@ -1916,12 +1917,10 @@ multi_update::initialize_tables(JOIN *join)
     {
       if (safe_update_on_fly(thd, join->join_tab, table_ref, all_tables))
       {
-        table->mark_columns_needed_for_update();
 	table_to_update= table;			// Update table on the fly
 	continue;
       }
     }
-    table->mark_columns_needed_for_update();
     table->prepare_for_position();
 
     /*
