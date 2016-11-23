@@ -2607,7 +2607,7 @@ int handler::ha_rnd_pos(uchar *buf, uchar *pos)
   if (!result)
   {
     update_rows_read();
-    if (table->vfield)
+    if (table->vfield && buf == table->record[0])
       table->update_virtual_fields(VCOL_UPDATE_FOR_READ);
   }
   table->status=result ? STATUS_NOT_FOUND: 0;
