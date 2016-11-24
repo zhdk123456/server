@@ -2004,10 +2004,12 @@ multi_update::initialize_tables(JOIN *join)
     {
       if (safe_update_on_fly(thd, join->join_tab, table_ref, all_tables))
       {
+        table->mark_columns_needed_for_update();
 	table_to_update= table;			// Update table on the fly
 	continue;
       }
     }
+    table->mark_columns_needed_for_update();
     table->prepare_for_position();
 
     /*
