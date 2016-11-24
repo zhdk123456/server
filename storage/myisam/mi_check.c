@@ -3650,7 +3650,8 @@ finish:
     param->glob_crc+= info->checksum;
   if (param->fix_record)
     param->fix_record(info, sort_param->record,
-                      param->testflag & T_REP_BY_SORT ? sort_param->key : -1);
+                      param->testflag & T_REP_BY_SORT ? (int)sort_param->key
+                                                      : -1);
   DBUG_RETURN(0);
 }
 
