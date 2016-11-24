@@ -24105,7 +24105,6 @@ innobase_get_computed_value(
 	upd_t*			parent_update,
 	dict_foreign_t*		foreign)
 {
-	byte		rec_buf1[REC_VERSION_56_MAX_INDEX_COL_LEN];
 	byte		rec_buf2[REC_VERSION_56_MAX_INDEX_COL_LEN];
 	byte*		mysql_rec;
 	byte*		buf;
@@ -24131,12 +24130,9 @@ innobase_get_computed_value(
 			*local_heap = mem_heap_create(UNIV_PAGE_SIZE);
 		}
 
-		mysql_rec = static_cast<byte*>(mem_heap_alloc(
-			    *local_heap, index->table->vc_templ->rec_len));
 		buf = static_cast<byte*>(mem_heap_alloc(
 				*local_heap, index->table->vc_templ->rec_len));
 	} else {
-		mysql_rec = rec_buf1;
 		buf = rec_buf2;
 	}
 
@@ -24206,39 +24202,11 @@ innobase_get_computed_value(
 
 	field = dtuple_get_nth_v_field(row, col->v_pos);
 
-	if (mysql_table == NULL) {
-		if (vctempl->type == DATA_BLOB) {
-			ulint	max_len;
-
-			if (vctempl->mysql_col_len - 8 == 1) {
-				/* This is for TINYBLOB only, which needs
-				only 1 byte, other BLOBs won't be affected */
-				max_len = 255;
-			} else {
-				max_len = DICT_MAX_FIELD_LEN_BY_FORMAT(
-						index->table) + 1;
-			}
-
-			byte*   blob_mem = static_cast<byte*>(
-				mem_heap_alloc(heap, max_len));
-
-			row_mysql_store_blob_ref(
-				mysql_rec + vctempl->mysql_col_offset,
-				vctempl->mysql_col_len, blob_mem, max_len);
-                }
-
-                ut_a(0);
-		ret = 1; /*handler::my_eval_gcolumn_expr_with_open(
-			thd, index->table->vc_templ->db_name.c_str(),
-			index->table->vc_templ->tb_name.c_str(), col->m_col.ind,
-			(uchar *)mysql_rec); MYSQL_VIRTUAL_COLUMNS*/
-        } else {
-                my_bitmap_map   *old_write_set=dbug_tmp_use_all_columns(mysql_table, mysql_table->write_set);
-                my_bitmap_map   *old_read_set=dbug_tmp_use_all_columns(mysql_table, mysql_table->read_set);
-                ret= mysql_table->update_virtual_field(mysql_table->field[col->m_col.ind]);
-                dbug_tmp_restore_column_map(mysql_table->read_set, old_read_set);
-                dbug_tmp_restore_column_map(mysql_table->write_set, old_write_set);
-	}
+        my_bitmap_map   *old_write_set=dbug_tmp_use_all_columns(mysql_table, mysql_table->write_set);
+        my_bitmap_map   *old_read_set=dbug_tmp_use_all_columns(mysql_table, mysql_table->read_set);
+        ret= mysql_table->update_virtual_field(mysql_table->field[col->m_col.ind]);
+        dbug_tmp_restore_column_map(mysql_table->read_set, old_read_set);
+        dbug_tmp_restore_column_map(mysql_table->write_set, old_write_set);
 
 	if (ret != 0) {
 #ifdef INNODB_VIRTUAL_DEBUG
