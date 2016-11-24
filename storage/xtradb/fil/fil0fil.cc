@@ -7651,7 +7651,7 @@ fil_space_get_crypt_data(
 
 		crypt_data = space->crypt_data;
 
-		ut_ad(space->page_0_crypt_read);
+		ut_ad(space->page_0_crypt_read || IS_XTRABACKUP());
 	}
 
 	return(crypt_data);
